@@ -153,12 +153,12 @@ process	main(void)
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
 
-	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
-	//resume(create(iobound2, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
-	//resume(create(iobound3, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
-  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
+	resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
+	resume(create(iobound2, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
+	resume(create(iobound3, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
+  	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
+ 	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
+ 	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
 
 
 

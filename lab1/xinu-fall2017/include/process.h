@@ -81,20 +81,10 @@ struct procent {		/* Entry in the process table		*/
 };
 
 
-/* Definition of the TS update */
-
-struct tsupdate{
-	uint32  ts_quantum;   /* the updating quantum time  */
-	pri16 	ts_tqexp;     /* the updating level for CPU */
-	pri16   ts_slepret;   /* the updating level for I/O */
-
-};
-
 /* Marker for the top of a process stack (used to help detect overflow)	*/
 #define	STACKMAGIC	0x0A0AAAA9
 
 extern	struct	procent  proctab[];
-extern  struct  tsupdate tstable[];
 extern	int32	prcount;	/* Currently active processes		*/
 extern	pid32	currpid;	/* Currently executing process		*/
 extern  pri16   psprio;         /* Currently priotity of group PS       */
