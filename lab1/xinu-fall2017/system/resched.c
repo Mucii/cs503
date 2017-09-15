@@ -4,70 +4,68 @@
 
 struct	defer	Defer;
 
-/* Declaration of ts table*/
-int32 tstable[60][3]={
-{200,0,50},
-{200,0,50},
-{200,0,50},
-{200,0,50},
-{200,0,50},
-{200,0,50},
-{200,0,50},
-{200,0,50},
-{200,0,50},
-{200,0,50},
-{160,0,51},
-{160,1,51},
-{160,2,51},
-{160,3,51},
-{160,4,51},
-{160,5,51},
-{160,6,51},
-{160,7,51},
-{160,8,51},
-{160,9,51},
-{120,10,52},
-{120,11,52},
-{120,12,52},
-{120,13,52},
-{120,14,52},
-{120,15,52},
-{120,16,52},
-{120,17,52},
-{120,18,52},
-{120,19,52},
-{80,20,53},
-{80,21,53},
-{80,22,53},
-{80,23,53},
-{80,24,53},
-{80,25,54},
-{80,26,54},
-{80,27,54},
-{80,28,54},
-{80,29,54},
-{40,30,55},
-{40,31,55},
-{40,32,55},
-{40,33,55},
-{40,34,55},
-{40,35,56},
-{40,36,57},
-{40,37,58},
-{40,38,58},
-{40,39,58},
-{40,40,58},
-{40,41,58},
-{40,42,58},
-{40,43,58},
-{40,44,58},
-{40,45,58},
-{40,46,58},
-{40,47,58},
-{40,48,58},
-{20,49,59}
+int tstab[60][3]={
+{200, 0, 50},
+{200, 0, 50},
+{200, 0, 50},
+{200, 0, 50},
+{200, 0, 50},
+{200, 0, 50},
+{200, 0, 50},
+{200, 0, 50},
+{200, 0, 50},
+{200, 0, 50},
+{160, 0, 51},
+{160, 1, 51},
+{160, 2, 51},
+{160, 3, 51},
+{160, 4, 51},
+{160, 5, 51},
+{160, 6, 51},
+{160, 7, 51},
+{160, 8, 51},
+{160, 9, 51},
+{120, 10, 52},
+{120, 11, 52},
+{120, 12, 52},
+{120, 13, 52},
+{120, 14, 52},
+{120, 15, 52},
+{120, 16, 52},
+{120, 17, 52},
+{120, 18, 52},
+{120, 19, 52},
+{80, 20, 53},
+{80, 21, 53},
+{80, 22, 53},
+{80, 23, 53},
+{80, 24, 53},
+{80, 25, 54},
+{80, 26, 54},
+{80, 27, 54},
+{80, 28, 54},
+{80, 29, 54},
+{40, 30, 55},
+{40, 31, 55},
+{40, 32, 55},
+{40, 33, 55},
+{40, 34, 55},
+{40, 35, 56},
+{40, 36, 57},
+{40, 37, 58},
+{40, 38, 58},
+{40, 39, 58},
+{40, 40, 58},
+{40, 41, 58},
+{40, 42, 58},
+{40, 43, 58},
+{40, 44, 58},
+{40, 45, 58},
+{40, 46, 58},
+{40, 47, 58},
+{40, 48, 58},
+{20, 49, 59}
 };
-
 
 /*------------------------------------------------------------------------
  *  aginscheduling  -  Reschedule processor to by aging scheduling
@@ -103,13 +101,11 @@ local pid32 aginscheduling(void){
 	}else{
 		tsprio=tsprioin;
 	}
-
-	index=queuetab[queuehead(readylist)].qnext;
 	
+	index=queuetab[queuehead(readylist)].qnext;
 	/* second step of aging sche, queue is incluede in queue.h */
-
-	while(index!=queuetail(readylist))
-	{
+	while(index!=queuetail(readylist)){
+		
 		ptnow=&proctab[index];
 		/* sheduling according to TS or PS */
 		if(ptnow->prgroup==PROPORTIONALSHARE){
@@ -156,54 +152,53 @@ local pid32 aginscheduling(void){
 }
 
 local void oldps(struct procent *ptold){
-	/* set pi and prio*/
-		ptold->pspi=ptold->pspi+(QUANTUM-preempt)*(100/ptold->psrate);
-		ptold->prprio=32767-ptold->pspi;
-		/* set block status*/
-		if(preempt<=0){
-			ptold->psblock=UNBLOCKED;
-		}else{
-			ptold->psblock=BLOCKED;
-		}
 
-		return;
+	/* set pi and prio*/
+	ptold->pspi=ptold->pspi+(QUANTUM-preempt)*(100/ptold->psrate);
+	ptold->prprio=32767-ptold->pspi;
+	/* set block status*/
+	if(preempt<=0){
+		ptold->psblock=UNBLOCKED;
+	}else{
+		ptold->psblock=BLOCKED;
+	}
+	return;
 }
 
 local void oldts(struct procent *ptold){
-		/* set new prio of TS*/
-		if(preempt<=0){
-			ptold->prprio=tstable[ptold->prprio][1];
-		}else{
-			ptold->prprio=tstable[ptold->prprio][2];
-		}
+	//kprintf("%d\n\n",ptold->prprio);
+	/* check IO or CPU and change priority*/
+	if(preempt<=0){
+		ptold->prprio=tstab[ptold->prprio][1];
+	}else{
+		ptold->prprio=tstab[ptold->prprio][2];
+	}
+	//kprintf("%d\n\n",ptold->prprio);
 
-		return;
-
+	return;
 }
 
 local void newps(struct procent *ptnew){
-	/* change prio if blocked or first scheduled*/
 	if(ptnew->psblock==BLOCKED){
-			int T = clktime*1000+(1000-count1000);
-			if(T>ptnew->pspi){
-				ptnew->pspi=T;
-				ptnew->prprio=32767-T;
-			}
+		int T = clktime*1000+(1000-count1000);
+		if(T>ptnew->pspi){
+			ptnew->pspi=T;
+			ptnew->prprio=32767-T;
 		}
-		preempt = QUANTUM;
-		return;
+	}
+	preempt = QUANTUM;
+
+	return;
 }
 
-
 local void newts(struct procent *ptnew){
-	/* choose new quantum, if first time, use default*/
 	if(ptnew->tsnew==TSFIRST){
-			preempt=QUANTUM;
-			ptnew->tsnew=TSSECOND;
-		}else{
-			preempt=tstable[ptnew->prprio][0];
-		}
-		return;
+		preempt=QUANTUM;
+		ptnew->tsnew=TSSECOND;
+	}else{
+		preempt=tstab[ptnew->prprio][0];
+	}
+	return;
 }
 
 /*------------------------------------------------------------------------
@@ -227,18 +222,22 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
 	ptold = &proctab[currpid];
 	oldpid = currpid;
-	
-
-	/* PS and TS scheduling for old process*/
+	//kprintf("this is %d\n\n",preempt);
+	/* First step of PS scheduling, change */
+	//kprintf("process is %s\n\n",ptold->prname);
 	if(ptold->prgroup==PROPORTIONALSHARE && currpid!=NULLPROC){
 		oldps(ptold);
-	}else if(ptold->prgroup==TSSCHED && currpid!=NULLPROC){
+	}else{
 		oldts(ptold);
 	}
 
 	if (ptold->prstate == PR_CURR) {  /* Process remains eligible */
 		
-		/*Old process will no longer remain current */
+		/*if (ptold->prprio > firstkey(readylist)) {
+			return;
+		}
+
+		Old process will no longer remain current */
 
 		ptold->prstate = PR_READY;
 		insert(currpid, readylist, ptold->prprio);
@@ -249,16 +248,17 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	currpid = getitem(aginscheduling()); /* remove current id from readylist*/
 	ptnew = &proctab[currpid];
 
-	/* PS and TS scheduling for new process*/
-	if(ptnew->prgroup==PROPORTIONALSHARE && currpid!=NULLPROC){
+	/* Third step of PS scheduling*/
+	if(ptnew->prgroup==PROPORTIONALSHARE){
 		newps(ptnew);
-	}else if(ptold->prgroup==TSSCHED && currpid!=NULLPROC){
+	}else{
 		newts(ptnew);
 	}
 
+
 	ptnew->prstate = PR_CURR;
 
-	//kprintf("process is %s\n\n",ptnew->prname);
+	kprintf("process is %s\n\n",ptnew->prname);
 
 	//kprintf("prio is %d\n\n", ptnew->prprio);
 
