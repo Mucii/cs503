@@ -10,9 +10,9 @@ local void foo1(void){
 }
 
 local void foo2(void){
-	sleepms(1000);
+	sleepms(2000);
 	int i=1;
-	while(i<100000000){i++;}
+	while(i<10000000000000){i++;}
 	return;
 }
 
@@ -139,10 +139,10 @@ process	main(void)
 	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps3",0,NULL));
 	//resume(create(foo2,INITSTK,PROPORTIONALSHARE,10,"ps4",0,NULL));
 
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps1",0,NULL));
-	//resume(create(foo2,INITSTK,PROPORTIONALSHARE,30,"ps2",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps3",0,NULL));
-	//resume(create(foo2,INITSTK,PROPORTIONALSHARE,30,"ps4",0,NULL));
+	resume(create(foo1,INITSTK,PROPORTIONALSHARE,50,"ps1",0,NULL));
+	resume(create(foo2,INITSTK,PROPORTIONALSHARE,60,"ps2",0,NULL));
+	resume(create(foo1,INITSTK,PROPORTIONALSHARE,50,"ps3",0,NULL));
+	resume(create(foo2,INITSTK,PROPORTIONALSHARE,60,"ps4",0,NULL));
 
 	// TS scheduling
 
@@ -153,12 +153,12 @@ process	main(void)
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
 
-	resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
+	/*resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
 	resume(create(iobound2, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
 	resume(create(iobound3, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
   	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
  	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
- 	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
+ 	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));*/
 
 
 
@@ -183,6 +183,6 @@ process	main(void)
  	//resume(create(iobound, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
 
-
+	return OK;
     
 }

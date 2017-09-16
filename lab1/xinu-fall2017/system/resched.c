@@ -79,19 +79,11 @@ local pid32 aginscheduling(void){
 	struct procent *ptold; /* current process*/
 	int pscount; /* counts of ps process */
 	int tscount; /* counts of ts process */
-	pid32 psid; /* id of ps process to return */
-	pid32 tsid; /* id of ts process to return */
-	pri16 pslocal; /* ps prio */
-	pri16 tslocal; /* ts prio */
 
 	/* initialize */
 
 	pscount=0;
 	tscount=0;
-	psid=NULLPROC;
-	tsid=NULLPROC;
-	tslocal=-1;
-	pslocal=32767;
 
 	/* first step of aging sche*/
 
@@ -103,6 +95,7 @@ local pid32 aginscheduling(void){
 	}
 	
 	index=queuetab[queuehead(readylist)].qnext;
+
 	/* second step of aging sche, queue is incluede in queue.h */
 	while(index!=queuetail(readylist)){
 		
@@ -112,43 +105,52 @@ local pid32 aginscheduling(void){
 			if(index!=NULLPROC && index!=currpid){
 				pscount+=1;
 			}
-			if(ptnow->pspi<pslocal && index!=NULLPROC){
-				psid=index;
-				pslocal=ptnow->pspi;
-			}
 		}else if(ptnow->prgroup==TSSCHED){
 			if(index!=NULLPROC && index!=currpid){
 				tscount+=1;
 			}
-			if(ptnow->prprio>tslocal && index!=NULLPROC){
-				tsid=index;
-				tslocal=ptnow->prprio;
-			}
-
 		}
-
 		index=queuetab[index].qnext;
 	}
 
 	psprio+=pscount;
 	tsprio+=tscount;
 
-	//kprintf("tslocal is %d\n\n", tslocal);
-
-	//kprintf("tscount is %d\n\n", tscount);
-
-	//kprintf("currid is %d\n\n",currpid);
-	//
-	
-	//kprintf("psprio is %d\n",pslocal);
+	if(pscount*tscount==0){
+		if(tscount!=0){
+			return TSSCHED;
+		}else{
+			return PROPORTIONALSHARE; //NULLPROC is PROPORTIONALSHARE
+		}
+	}
 
 	if(psprio>=tsprio){
-		if(psid!=NULLPROC){
-		return psid;}else{return tsid;}		
+		return PROPORTIONALSHARE;
 	}else{
-		if(tsid!=NULLPROC){
-		return tsid;}else{return psid;}
+		return TSSCHED;
 	}
+
+}
+
+local pid32 findid(int group){
+
+	pid32 index; /* index of process we will go over */
+	struct procent *ptnow; /* process we will go over */
+	
+	if(isempty(readylist)){
+		return EMPTY;
+	}
+
+	index=queuetab[queuehead(readylist)].qnext;
+
+	ptnow=&proctab[index];
+	
+	while(ptnow->prgroup!=group){
+		index=queuetab[index].qnext;
+		ptnow=&proctab[index];
+	}
+
+	return getitem(index); //remove current id from readylist
 }
 
 local void oldps(struct procent *ptold){
@@ -168,7 +170,7 @@ local void oldps(struct procent *ptold){
 local void oldts(struct procent *ptold){
 	//kprintf("%d\n\n",ptold->prprio);
 	/* check IO or CPU and change priority*/
-	if(preempt<=0){
+	if(preempt<=0 || ptold->prstate==PR_CURR || ptold->prstate==PR_READY){
 		ptold->prprio=tstab[ptold->prprio][1];
 	}else{
 		ptold->prprio=tstab[ptold->prprio][2];
@@ -245,7 +247,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
 	/* Force context switch to highest priority ready process */
 
-	currpid = getitem(aginscheduling()); /* remove current id from readylist*/
+	currpid = findid(aginscheduling());
 	ptnew = &proctab[currpid];
 
 	/* Third step of PS scheduling*/
@@ -265,14 +267,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	//kprintf("psprio is %d\n\n",psprio);
 
 	//kprintf("tsprio is %d\n\n",tsprio);
-
-	//kprintf("process prio is %d\n\n",ptnew->prprio);
-
-	/*kprintf("old process's state: %d\n\n",ptold->prstate);
-	kprintf("new process's state: %d\n\n",ptnew->prstate);*/
-	//kprintf("process is %d\n\n", ptnew->prgroup);
-	/*kprintf("psprio is %d\n\n",psprio);
-	kprintf("tsprio is %d\n\n",tsprio);*/
 
 	/*do not need to switch*/
 	if(oldpid==currpid && ptold->prstate == PR_CURR){
