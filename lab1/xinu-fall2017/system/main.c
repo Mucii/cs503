@@ -4,13 +4,13 @@
 
 local void foo1(void){
 	int i=1;
-	while(i<100000000){
+	while(i<10000000000000){
 		i++;}
 	return;
 }
 
 local void foo2(void){
-	sleepms(2000);
+	sleepms(5000);
 	int i=1;
 	while(i<10000000000000){i++;}
 	return;
@@ -48,8 +48,8 @@ local void iobound3(void) {
 
 local void cpubound(void) {
   int32 i,j,k;
-  for (i = 0; i < 10; i++) {
-    for (j = 0; j < 100000000; j++) {
+  for (i = 0; i < 30; i++) {
+    for (j = 0; j < 10000000; j++) {
       k = 1;
     }
     kprintf("%s, %d\n\n", proctab[currpid].prname,proctab[currpid].prprio);
@@ -134,15 +134,11 @@ process	main(void)
 	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps3",0,NULL));
 	//resume(create(foo2,INITSTK,PROPORTIONALSHARE,10,"ps4",0,NULL));
 
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps1",0,NULL));
-	//resume(create(foo2,INITSTK,PROPORTIONALSHARE,10,"ps2",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps3",0,NULL));
-	//resume(create(foo2,INITSTK,PROPORTIONALSHARE,10,"ps4",0,NULL));
 
-	resume(create(foo1,INITSTK,PROPORTIONALSHARE,50,"ps1",0,NULL));
-	resume(create(foo2,INITSTK,PROPORTIONALSHARE,60,"ps2",0,NULL));
-	resume(create(foo1,INITSTK,PROPORTIONALSHARE,50,"ps3",0,NULL));
-	resume(create(foo2,INITSTK,PROPORTIONALSHARE,60,"ps4",0,NULL));
+	resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps1",0,NULL));
+	resume(create(foo2,INITSTK,PROPORTIONALSHARE,30,"ps2",0,NULL));
+	resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps3",0,NULL));
+	resume(create(foo2,INITSTK,PROPORTIONALSHARE,30,"ps4",0,NULL));
 
 	// TS scheduling
 
@@ -153,12 +149,12 @@ process	main(void)
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
 
-	/*resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
-	resume(create(iobound2, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
-	resume(create(iobound3, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
-  	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
- 	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
- 	resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));*/
+	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
+	//resume(create(iobound2, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
+	//resume(create(iobound3, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
+  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
+ 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
+ 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
 
 
 
@@ -176,11 +172,11 @@ process	main(void)
 	//
 	//
 	// Test 1 - Null process is not running
-	//resume(create(iobound, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
+	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
   	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
-  	//resume(create(iobound, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
+  	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
- 	//resume(create(iobound, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
+ 	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
 
 	return OK;

@@ -159,7 +159,7 @@ local void oldps(struct procent *ptold){
 	ptold->pspi=ptold->pspi+(QUANTUM-preempt)*(100/ptold->psrate);
 	ptold->prprio=32767-ptold->pspi;
 	/* set block status*/
-	if(preempt<=0){
+	if(preempt<=0 || ptold->prstate==PR_CURR || ptold->prstate==PR_READY){
 		ptold->psblock=UNBLOCKED;
 	}else{
 		ptold->psblock=BLOCKED;
@@ -170,7 +170,7 @@ local void oldps(struct procent *ptold){
 local void oldts(struct procent *ptold){
 	//kprintf("%d\n\n",ptold->prprio);
 	/* check IO or CPU and change priority*/
-	if(preempt<=0 || ptold->prstate==PR_CURR || ptold->prstate==PR_READY){
+	if(preempt<=0){
 		ptold->prprio=tstab[ptold->prprio][1];
 	}else{
 		ptold->prprio=tstab[ptold->prprio][2];
@@ -260,7 +260,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
 	ptnew->prstate = PR_CURR;
 
-	kprintf("process is %s\n\n",ptnew->prname);
+	kprintf("process is %s %d %d\n\n",ptnew->prname,ptnew->prprio,ptnew->pspi);
 
 	//kprintf("prio is %d\n\n", ptnew->prprio);
 
