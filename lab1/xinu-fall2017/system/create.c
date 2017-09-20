@@ -44,7 +44,7 @@ pid32	create(
 	prptr->prgroup = group;
 	
 	if(group==PROPORTIONALSHARE){
-		prptr->prprio = 32767;
+		prptr->prprio = 2147483647;
 	}else{prptr->prprio = priority;}
 
 	

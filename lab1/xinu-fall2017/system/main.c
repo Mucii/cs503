@@ -2,21 +2,21 @@
 
 #include <xinu.h>
 
-local void foo1(void){
+static void foo1(void){
 	int i=1;
-	while(i<10000000000000){
+	while(i<1000000000000){
 		i++;}
 	return;
 }
 
-local void foo2(void){
+static void foo2(void){
 	sleepms(5000);
 	int i=1;
-	while(i<10000000000000){i++;}
+	while(i<1000000000000){i++;}
 	return;
 }
 
-local void iobound1(void) {
+static void iobound1(void) {
   int32 i,j,k;
   for (i = 0; i < 30; i++) {
       sleepms(71);
@@ -26,7 +26,7 @@ local void iobound1(void) {
   return;
 }
 
-local void iobound2(void) {
+static void iobound2(void) {
   int32 i,j,k;
   for (i = 0; i < 30; i++) {
       sleepms(101);
@@ -36,7 +36,7 @@ local void iobound2(void) {
   return;
 }
 
-local void iobound3(void) {
+static void iobound3(void) {
   int32 i,j,k;
   for (i = 0; i < 30; i++) {
       sleepms(157);
@@ -46,7 +46,7 @@ local void iobound3(void) {
   return;
 }
 
-local void cpubound(void) {
+static void cpubound(void) {
   int32 i,j,k;
   for (i = 0; i < 30; i++) {
     for (j = 0; j < 10000000; j++) {

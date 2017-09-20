@@ -4,7 +4,7 @@
 
 struct	defer	Defer;
 
-int tstab[60][3]={
+static int tstab[60][3]={
 {200, 0, 50},
 {200, 0, 50},
 {200, 0, 50},
@@ -67,11 +67,12 @@ int tstab[60][3]={
 {20, 49, 59}
 };
 
+
 /*------------------------------------------------------------------------
  *  aginscheduling  -  Reschedule processor to by aging scheduling
  *  *------------------------------------------------------------------------
  */
-local pid32 aginscheduling(void){
+static pid32 aginscheduling(void){
 
 
 	pid32 index; /* index of process we will go over */
@@ -115,6 +116,9 @@ local pid32 aginscheduling(void){
 
 	psprio+=pscount;
 	tsprio+=tscount;
+	
+	//kprintf("tscount is %d\n\n",tscount);
+	//kprintf("pscount is %d\n\n",pscount);
 
 	if(pscount*tscount==0){
 		if(tscount!=0){
@@ -132,7 +136,7 @@ local pid32 aginscheduling(void){
 
 }
 
-local pid32 findid(int group){
+static pid32 findid(int group){
 
 	pid32 index; /* index of process we will go over */
 	struct procent *ptnow; /* process we will go over */
@@ -153,11 +157,11 @@ local pid32 findid(int group){
 	return getitem(index); //remove current id from readylist
 }
 
-local void oldps(struct procent *ptold){
+static void oldps(struct procent *ptold){
 
 	/* set pi and prio*/
 	ptold->pspi=ptold->pspi+(QUANTUM-preempt)*(100/ptold->psrate);
-	ptold->prprio=32767-ptold->pspi;
+	ptold->prprio=2147483647-ptold->pspi;
 	/* set block status*/
 	if(preempt<=0 || ptold->prstate==PR_CURR || ptold->prstate==PR_READY){
 		ptold->psblock=UNBLOCKED;
@@ -167,7 +171,7 @@ local void oldps(struct procent *ptold){
 	return;
 }
 
-local void oldts(struct procent *ptold){
+static void oldts(struct procent *ptold){
 	//kprintf("%d\n\n",ptold->prprio);
 	/* check IO or CPU and change priority*/
 	if(preempt<=0){
@@ -180,12 +184,12 @@ local void oldts(struct procent *ptold){
 	return;
 }
 
-local void newps(struct procent *ptnew){
+static void newps(struct procent *ptnew){
 	if(ptnew->psblock==BLOCKED){
 		int T = clktime*1000+(1000-count1000);
 		if(T>ptnew->pspi){
 			ptnew->pspi=T;
-			ptnew->prprio=32767-T;
+			ptnew->prprio=2147483647-T;
 		}
 	}
 	preempt = QUANTUM;
@@ -193,7 +197,7 @@ local void newps(struct procent *ptnew){
 	return;
 }
 
-local void newts(struct procent *ptnew){
+static void newts(struct procent *ptnew){
 	if(ptnew->tsnew==TSFIRST){
 		preempt=QUANTUM;
 		ptnew->tsnew=TSSECOND;
@@ -250,6 +254,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	currpid = findid(aginscheduling());
 	ptnew = &proctab[currpid];
 
+	//kprintf("preempt is %d\n\n", preempt);
 	/* Third step of PS scheduling*/
 	if(ptnew->prgroup==PROPORTIONALSHARE){
 		newps(ptnew);
@@ -260,7 +265,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
 	ptnew->prstate = PR_CURR;
 
-	kprintf("process is %s %d %d\n\n",ptnew->prname,ptnew->prprio,ptnew->pspi);
+	kprintf("process is %s \n\n",ptnew->prname);
 
 	//kprintf("prio is %d\n\n", ptnew->prprio);
 
