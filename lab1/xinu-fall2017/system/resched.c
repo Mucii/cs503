@@ -256,7 +256,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
 	//kprintf("preempt is %d\n\n", preempt);
 	/* Third step of PS scheduling*/
-	if(ptnew->prgroup==PROPORTIONALSHARE){
+	if(ptnew->prgroup==PROPORTIONALSHARE && currpid!=NULLPROC){
 		newps(ptnew);
 	}else{
 		newts(ptnew);
@@ -265,7 +265,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
 	ptnew->prstate = PR_CURR;
 
-	kprintf("process is %s \n\n",ptnew->prname);
+	//kprintf("process is %s \n\n",ptnew->prname);
 
 	//kprintf("prio is %d\n\n", ptnew->prprio);
 
