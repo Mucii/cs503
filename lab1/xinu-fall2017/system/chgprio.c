@@ -18,8 +18,10 @@ void chgprio(
 	mask=disable();
 	if(group==PROPORTIONALSHARE){
 		psprioin=newprio;
+		psprio=newprio;
 	}else if(group==TSSCHED){
 		tsprioin=newprio;
+		tsprio=newprio;
 	}
 
 
