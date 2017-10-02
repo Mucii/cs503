@@ -174,7 +174,7 @@ static void oldps(struct procent *ptold){
 static void oldts(struct procent *ptold){
 	//kprintf("%d\n\n",ptold->prprio);
 	/* check IO or CPU and change priority*/
-	if(preempt<=0){
+	if(preempt<=0 || ptold->prstate==PR_CURR || ptold->prstate==PR_READY){
 		ptold->prprio=tstab[ptold->prprio][1];
 	}else{
 		ptold->prprio=tstab[ptold->prprio][2];
@@ -198,6 +198,8 @@ static void newps(struct procent *ptnew){
 }
 
 static void newts(struct procent *ptnew){
+	// For the first time schduled process, give default quantum time
+
 	if(ptnew->tsnew==TSFIRST){
 		preempt=QUANTUM;
 		ptnew->tsnew=TSSECOND;
@@ -205,6 +207,8 @@ static void newts(struct procent *ptnew){
 		preempt=tstab[ptnew->prprio][0];
 	}
 	return;
+
+
 }
 
 /*------------------------------------------------------------------------

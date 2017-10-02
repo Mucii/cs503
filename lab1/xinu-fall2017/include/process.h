@@ -21,6 +21,9 @@
 #define PROPORTIONALSHARE    0 /*Process group PS scheduling*/
 #define TSSCHED              1 /*Process group TS scheduling*/
 
+#define PS    0 /*Process group PS scheduling*/
+#define TS    1 /*Process group TS scheduling*/
+
 /* Process state constants */
 
 #define	PR_FREE		0	/* Process table entry is unused	*/

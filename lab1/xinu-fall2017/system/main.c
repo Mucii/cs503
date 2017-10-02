@@ -1,200 +1,51 @@
-/*  main.c  - main */
-
 #include <xinu.h>
 
-static void foo1(void){
-	int32 i,j,k;
-  	for (i = 0; i < 50; i++) {
-    for (j = 0; j < 5000000; j++) {
-      k = 1;
-    }
-    kprintf("%s\n\n", proctab[currpid].prname);
-  }
-  return;
-}
-static void foo2(void){
-	sleepms(5000);
-	int32 i,j,k;
-  	for (i = 0; i < 50; i++) {
-    for (j = 0; j < 5000000; j++) {
-      k = 1;
-    }
-    kprintf("%s\n\n", proctab[currpid].prname);
-  }
-  return;
+void sample_proc_cpu() {
+        int i, j;
+        int LOOP1 = 10; 
+        int LOOP2 = 10000000;
+
+        struct procent *pr = &proctab[currpid];
+
+        int v = 0;
+        for (i=0; i<LOOP1; i++) {
+                for (j=0; j<LOOP2; j++) {
+                        v += i * j;
+                }   
+                kprintf("PID: %d, Loop: %d\n", 
+                                currpid, i); 
+        }   
+
+        kprintf("===== CPU BOUNDED PID %d ends\n", currpid);
 }
 
+void sample_proc_io(uint32 time) {
+        int i;
+        int LOOP1 = 30; 
 
-static void iobound1(void) {
-  int32 i,j,k;
-  for (i = 0; i < 30; i++) {
-      sleepms(71);
-      kprintf("%s, %d\n\n", proctab[currpid].prname,proctab[currpid].prprio);
-  }
-  kprintf("end %s\n\n",proctab[currpid].prname);
-  return;
+        struct procent *pr = &proctab[currpid];
+
+        for (i=0; i<LOOP1; i++) {
+                sleepms(time);
+                kprintf("PID: %d, Sleep time: %d, Loop: %d\n", 
+                                currpid, time, i); 
+        }   
+
+        kprintf("===== IO BOUNDED PID %d ends\n", currpid);
 }
 
-static void iobound2(void) {
-  int32 i,j,k;
-  for (i = 0; i < 30; i++) {
-      sleepms(101);
-      kprintf("%s, %d\n\n", proctab[currpid].prname,proctab[currpid].prprio);
-  }
-  kprintf("end %s\n\n",proctab[currpid].prname);
-  return;
-}
-
-static void iobound3(void) {
-  int32 i,j,k;
-  for (i = 0; i < 30; i++) {
-      sleepms(157);
-      kprintf("%s, %d\n\n", proctab[currpid].prname,proctab[currpid].prprio);
-  }
-  kprintf("end %s\n\n",proctab[currpid].prname);
-  return;
-}
-
-static void cpubound(void) {
-  int32 i,j,k;
-  for (i = 0; i < 30; i++) {
-    for (j = 0; j < 10000000; j++) {
-      k = 1;
-    }
-    kprintf("%s, %d\n\n", proctab[currpid].prname,proctab[currpid].prprio);
-  }
-  kprintf("end %s\n\n",proctab[currpid].prname);
-  return;
-}
-
-process	main(void)
-{
-
-	/*Run the Xinu shell 
-
-	recvclr();
-	resume(create(shell, 8192, 50, "shell", 1, CONSOLE));
-
-	* Wait for shell to exit and recreate it *
-
-	while (TRUE) {
-		receive();
-		sleepms(200);
-		kprintf("\n\nMain process recreating shell\n\n");
-		resume(create(shell, 4096, 20, "shell", 1, CONSOLE));
-	}
-	return OK;*/
-
-
-
-	//chgprio(1,50);
-	// Teste for aging scheduling 
-
-
-	// Test 1
-
-	//resume(create(foo1,INITSTK,TSSCHED,25,"ts1",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,25,"ps1",0,NULL));
-	//resume(create(foo1,INITSTK,TSSCHED,25,"ts2",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,25,"ps2",0,NULL));
-
-
-	// Test 2
-
-	//chgprio(PROPORTIONALSHARE,50);
-
-	//resume(create(foo1,INITSTK,TSSCHED,25,"ts1",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,25,"ps1",0,NULL));
-	//resume(create(foo1,INITSTK,TSSCHED,25,"ts2",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,25,"ps2",0,NULL));
-
-
-	// Test 3
-
-	//chgprio(TSSCHED,15);
-
-	// change the prio to 50 to make sure ts take turns
-
-	//resume(create(foo1,INITSTK,TSSCHED,10,"ts1",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps1",0,NULL));
-	//resume(create(foo1,INITSTK,TSSCHED,10,"ts2",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps2",0,NULL));
-
-
-
-	// PS testing 
-
-	// Test 1
-
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps1",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps2",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps3",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps4",0,NULL));
-
-
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,30,"ps1",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps2",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,30,"ps3",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps4",0,NULL));
-
-
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps1",0,NULL));
-	//resume(create(foo2,INITSTK,PROPORTIONALSHARE,10,"ps2",0,NULL));
-	//resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps3",0,NULL));
-	//resume(create(foo2,INITSTK,PROPORTIONALSHARE,10,"ps4",0,NULL));
-
-
-	resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps1",0,NULL));
-	resume(create(foo2,INITSTK,PROPORTIONALSHARE,30,"ps2",0,NULL));
-	resume(create(foo1,INITSTK,PROPORTIONALSHARE,10,"ps3",0,NULL));
-	resume(create(foo2,INITSTK,PROPORTIONALSHARE,30,"ps4",0,NULL));
-
-	// TS scheduling
-
-	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
-  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
-  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
-
- 	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
-  	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
-  	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
- 	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
- 	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
- 	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
-
-	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
-  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
-  	//resume(create(iobound2, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
- 	//resume(create(iobound3, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	//
-	//
-	// Test 1 - Null process is not running
-	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts1", 0, NULL));
-	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts3", 0, NULL));
-	//resume(create(iobound1, INITSTK, TSSCHED, 30, "ts5", 0, NULL));
-  	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts2", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts4", 0, NULL));
- 	//resume(create(cpubound, INITSTK, TSSCHED, 30, "ts6", 0, NULL));
+process main() {
+        kprintf("===TS TEST3===\n");
+        resched_cntl(DEFER_START);
+        for (int i = 0; i < 6; i++) {
+                if (i % 2 == 0) {
+                        resume(create(sample_proc_cpu, 1024, TS, 20, "cpu-intense", 0));
+                }
+                else {
+                        resume(create(sample_proc_io, 1024, TS, 20, "io-intense", 1, 32));
+                }
+        }
+        resched_cntl(DEFER_STOP);
 
 	return OK;
-    
 }
