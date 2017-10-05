@@ -141,13 +141,18 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
         }
     }
 
+    int cur_before=0;
     int cur = 0;
     int next_cur = 0;
+    did32 did1
+    did32 did2=-1;
 
     dump_tokens(tok, tokbuf, ntok, "non-built-in");
 
     while (cur < ntok) {
-
+        //each time reinitial did1
+        did1=-1;
+        
         if (toktyp[cur] == SH_TOK_OTHER) {
             cmdtab_index = find_cmdtab_index(&tokbuf[tok[cur]]);
             if (cmdtab_index == -1) {
@@ -159,10 +164,16 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
 
             for (next_cur=cur+1; next_cur<ntok; next_cur++) {
                 if (toktyp[next_cur] != SH_TOK_OTHER)
-                    break;
+                    if (toktyp[next_cur] == SH_TOK_STICK){
+                        did1=pipcreate();
+                        next_cur++;
+                    }
+                    else{
+                        break;
+                    }
             }
 
-            ASSERT(toktyp[next_cur] != SH_TOK_OTHER || next_cur >= ntok);
+            //ASSERT(toktyp[next_cur] != SH_TOK_OTHER || next_cur >= ntok);
 
             int num_args = next_cur-cur;
             ASSERT(num_args > 0);
@@ -174,9 +185,35 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                                cmdtab[cmdtab_index].cname, 2, num_args, &tmparg);
 
             /* Set stdinput and stdoutput in child to redirect I/O */
-            proctab[childs[cur]].prdesc[0] = stdinput;
-            proctab[childs[cur]].prdesc[1] = stdoutput;
+            
+            // make sure no more than max pipes
+            if(did1==SYSERR){
+                fprintf("too much pipe!!");
+                return false;
+            }
 
+            if(did1==-1){
+                if(did2==-1){
+                    proctab[childs[cur]].prdesc[0] = stdinput;
+                    proctab[childs[cur]].prdesc[1] = stdoutput;
+                }else{
+                    //this means we have a pipe last time
+                    proctab[childs[cur]].prdesc[0] = did2;
+                    proctab[childs[cur]].prdesc[1] = stdoutput;
+                    pipconnect(did2, childs[cur_before], childs[cur]);
+                }
+            }else{
+                if(did1==PIPELINE0){
+                    //this means we have created the first pipe
+                    proctab[childs[cur]].prdesc[0] = stdinput;
+                    proctab[childs[cur]].prdesc[1] = did1;
+                }else{
+                    //this means we have created more than one pipe
+                    proctab[childs[cur]].prdesc[0] = did2;
+                    proctab[childs[cur]].prdesc[1] = did1;
+                    pipconnect(did2, childs[cur_before], childs[cur]);
+                }
+            }
             /* If creation or argument copy fails, report error */
             if ((childs[cur] == SYSERR) ||
                 (addargs(childs[cur], num_args, &tok[cur], tlen, &tokbuf[cur], &tmparg) == SYSERR) ) {
@@ -187,7 +224,11 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
 			fprintf(dev,"%s (parsing)\n", SHELL_SYNERRMSG);
             return false;
         }
+        
+        //store perious command id and pipe id for pipe connect
+        cur_before=cur;
         cur = next_cur;
+        did2=did1;
     }
 
     for (int i=0; i<SHELL_MAXTOK; i++) {
