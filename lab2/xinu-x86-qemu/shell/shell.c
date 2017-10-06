@@ -111,7 +111,7 @@ static bool8 handle_builtin(did32 dev,
 
 static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                                 int32 ntok, char *tokbuf, int32 *tok, int32 tlen, int32 *toktyp,
-                                did32 stdinput, did32 stdoutput, char *outname, char *inname) {
+                                did32 stdinput, did32 stdoutput, char *outname, char *inname, pipid32 pipes[], int32 npipes) {
     // LAB2: TODO: Modify this function to (1) create pipe, (2) connect pipe, and
     // (3) replace stdin/stdout
 
@@ -164,9 +164,24 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
 
             for (next_cur=cur+1; next_cur<ntok; next_cur++) {
                 if (toktyp[next_cur] != SH_TOK_OTHER)
+                    //find pipe creation
                     if (toktyp[next_cur] == SH_TOK_STICK){
+                        
+                        if(npipes >= MAXPIPES){
+                            fprintf("too much pipe!!");
+                                return false;
+                        }
+
                         did1=pipcreate();
+                        // record pipes to delete
+                        pipes[npipes] = did32_to_pipid32(did1);
+                        npipes++;
                         next_cur++;
+                        if(next_curr>=ntok){
+                            fprintf(dev,"%s (parsing)\n", SHELL_SYNERRMSG);
+                            return false;
+                        }
+                        break;
                     }
                     else{
                         break;
@@ -224,7 +239,7 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
 			fprintf(dev,"%s (parsing)\n", SHELL_SYNERRMSG);
             return false;
         }
-        
+
         //store perious command id and pipe id for pipe connect
         cur_before=cur;
         cur = next_cur;
@@ -263,6 +278,8 @@ process	shell (
 	bool8	backgnd;		/* Run command in background?	*/
 	char	*outname, *inname;	/* Pointers to strings for file	*/
 	did32	stdinput, stdoutput;	/* Descriptors for redirected	*/
+    pipid32 pipes[MAXPIPES]; // store pipes id so that can delete it after all process finish
+    int32   npipes=0;      // number of pipes
 
 	/* Print shell banner and startup message */
 	fprintf(dev, "\n\n%s%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
@@ -368,16 +385,40 @@ process	shell (
 
 		stdinput = stdoutput = dev;
 
+
+        bool8 result;
         // Attempt to handle built-in case.
         // If not handled, try non-built-in case.
         if (!handle_builtin(dev, backgnd,
                             ntok, tokbuf, tok, tlen,
                             outname, inname)) {
 
-            handle_non_builtin(dev, backgnd,
+            result=handle_non_builtin(dev, backgnd,
                                ntok, tokbuf, tok, tlen, toktyp,
-                               stdinput, stdoutput, outname, inname);
+                               stdinput, stdoutput, outname, inname, pipes, npipes);
         }
+
+        bool8 pipefinish = TRUE;
+
+        // this is to make sure all process related to pipes have finished before we can restart shell
+        if(result){
+            while(pipefinish){
+                pipefinish = FALSE;
+                for(int i=0; i<npipes; i++){
+                    pipefinish = (pipefinish || proctab[pipe_tables[pipes[i]].writer].prstate != PR_FREE);
+                    pipefinish = (pipefinish || proctab[pipe_tables[pipes[i]].reader].prstate != PR_FREE);
+                }
+            }
+
+            // delete all pipes to release pipes
+            for(int i=0; i<npipes; i++){
+                pipedelete(pipid32_to_did32(pipes[i]));
+            }
+        }
+
+        npipes=0;
+
+
     }
 
     /* Terminate the shell process by returning from the top level */
