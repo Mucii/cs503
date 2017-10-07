@@ -2,13 +2,29 @@
 
 // this is the transformation between pipid and did
 pipid32 did32_to_pipid32(did32 devpipe) {
-    ASSERT(devpipe >= PIPELINE0 && devpipe <= PIPELINE9);
+    //ASSERT(devpipe >= PIPELINE0 && devpipe <= PIPELINE9);
     return devpipe - PIPELINE0;
 }
 
 did32 pipid32_to_did32(pipid32 pip) {
-    ASSERT(pip >= 0 && pip <= 9);
+    //ASSERT(pip >= 0 && pip <= 9);
     return PIPELINE0 + pip;
+}
+
+static pipid32 newpip(void){
+    int32 i;
+    pipid32 pipid;
+
+
+    // go over all table to find available pipe
+    for (i=0; i<MAXPIPES; i++ ){
+        pipid = i;
+        if (pipe_tables[pipid].state == PIPE_FREE){
+            return pipid;
+        }
+    }
+
+    return SYSERR;
 }
 
 did32 pipcreate() {
@@ -24,10 +40,9 @@ did32 pipcreate() {
     	return SYSERR;
     }
 
-    pipe = pipe_tables[pipid];
+    pipe = &pipe_tables[pipid];
     // change the state
     pipe->state = PIPE_USED;
-
 
     // init
     pipe->owner = currpid;
@@ -44,25 +59,4 @@ did32 pipcreate() {
     restore(mask);
 
     return did;
-}
-
-
-static pipid32 newpip(void){
-	static pipid32 nextpipe = 0;
-	int32 i;
-	pipid32 pipid;
-
-
-	// go over all table to find available pipe
-	for (i=0; i<MAXPIPES; i++ ){
-		pipid = nextpipe++;
-		if(nextpipe >= MAXPIPES){
-			nextpipe = 0;
-		}
-		if (pipe_tables[pipid].state == PIPE_FREE){
-			return pipid;
-		}
-	}
-
-	return SYSERR;
 }

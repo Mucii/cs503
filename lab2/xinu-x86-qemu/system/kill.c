@@ -15,6 +15,9 @@ syscall	kill(
 	intmask	mask;			/* Saved interrupt mask		*/
 	struct	procent *prptr;		/* Ptr to process's table entry	*/
 	int32	i;			/* Index into descriptors	*/
+	pipid32 pipid;
+	struct  pipe_t *pipe;
+	struct procent *proc;
 
 	mask = disable();
 	if (isbadpid(pid) || (pid == NULLPROC)
@@ -29,7 +32,37 @@ syscall	kill(
 
 	send(prptr->prparent, pid);
 	for (i=0; i<3; i++) {
+		//check whether the process is the writer or reader
+		if(prptr->prdesc[i] >= PIPELINE0){
+			pipid = did32_to_pipid32(prptr->prdesc[i]);
+			pipe = &pipe_tables[pipid];
+			
+			// this can only happen when otherside has alreadly finished
+
+			if(pipe->writer!=pid){
+				proc = &proctab[pipe->writer];
+				if(proc->prstate == PR_FREE){ 
+					pipe->state=PIPE_OTHER;
+					pipdisconnect(prptr->prdesc[i]);
+				}
+			}
+
+			if(pipe->reader!=pid){
+				proc = &proctab[pipe->reader];
+				if(proc->prstate == PR_FREE){
+					pipe->state=PIPE_OTHER;
+					pipdisconnect(prptr->prdesc[i]);
+				}
+			}
+		}
 		close(prptr->prdesc[i]);
+	}
+
+	// check the owner
+	for(pipid32 i = 0; i<MAXPIPES; i++){
+		if(pipe_tables[i].owner == pid){
+			pipdelete(pipid32_to_did32(i));
+		}
 	}
 
 	freestk(prptr->prstkbase, prptr->prstklen);

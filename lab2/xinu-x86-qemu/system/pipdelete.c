@@ -1,18 +1,18 @@
 #include <xinu.h>
 
 status pipdelete(did32 devpipe) {
-    intmastk mask;   // interrupt mask
+    intmask mask;   // interrupt mask
     struct pipe_t *pipe;  // pipe for the table entry
     pipid32 pipid;
 
-    mask=disbale();
+    mask=disable();
     
     pipid = did32_to_pipid32(devpipe);
 
-
+    //kprintf("begin delete %d\n", pipid);
 
     // if bad pipid
-    if(badpipid(pipid)){
+    if(isbadpipid(pipid)){
     	restore(mask);
     	return SYSERR;
     }
@@ -39,6 +39,9 @@ status pipdelete(did32 devpipe) {
     pipe->readerid = 0;
     semdelete(pipe->writersem);
     semdelete(pipe->readersem);
+
+
+    //kprintf("end delete %d\n", pipid);
 
 
     return OK;

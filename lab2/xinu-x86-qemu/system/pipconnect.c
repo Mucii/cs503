@@ -2,7 +2,7 @@
 
 status pipconnect(did32 devpipe, pid32 writer, pid32 reader) {
     intmask mask;
-    struct pipe_t pipe;
+    struct pipe_t *pipe;
     pipid32 pipid;
 
     mask = disable();
@@ -24,8 +24,9 @@ status pipconnect(did32 devpipe, pid32 writer, pid32 reader) {
     pipe->state = PIPE_CONNECTED;
     pipe->writer=writer;
     pipe->reader=reader;
-    semreset(writersem, PIPE_SIZE);
-    semreset(readersem, 0);
+    semreset(pipe->writersem, PIPE_SIZE);
+    semreset(pipe->readersem, 0);
+    restore(mask);
 	return OK;
 }
 

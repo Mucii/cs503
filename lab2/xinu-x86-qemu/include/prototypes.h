@@ -19,6 +19,13 @@ extern uint32 pipread(struct dentry *devptr, char* buf, uint32 len);
 extern devcall pipputc(struct dentry *devptr, char ch);
 extern devcall pipgetc(struct dentry *devptr);
 
+// pipcreat.c 
+extern pipid32 did32_to_pipid32(did32 devpipe);
+extern did32 pipid32_to_did32(pipid32 pip);
+
+// pipdisconnect
+extern void cleanup(pipid32 pipid);
+
 /* in file ascdate.c */
 extern	status	ascdate(uint32, char *);
 

@@ -39,6 +39,9 @@ const	struct	cmdent	cmdtab[] = {
 
 uint32	ncmd = sizeof(cmdtab) / sizeof(struct cmdent);
 
+
+pipid32 pipes[MAXPIPES]; // store pipes id so that can delete it after all process finish
+int32   npipes=0;      // number of pipes
 /************************************************************************/
 /* shell  -  Provide an interactive user interface that executes	*/
 /*	     commands.  Each command begins with a command name, has	*/
@@ -111,7 +114,7 @@ static bool8 handle_builtin(did32 dev,
 
 static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                                 int32 ntok, char *tokbuf, int32 *tok, int32 tlen, int32 *toktyp,
-                                did32 stdinput, did32 stdoutput, char *outname, char *inname, pipid32 pipes[], int32 npipes) {
+                                did32 stdinput, did32 stdoutput, char *outname, char *inname) {
     // LAB2: TODO: Modify this function to (1) create pipe, (2) connect pipe, and
     // (3) replace stdin/stdout
 
@@ -119,6 +122,16 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
     int msg;
 	pid32 childs[SHELL_MAXTOK];
     int32 cmdtab_index;
+
+    
+    // delete all pipes to start over
+    //kprintf("npipes %d\n", npipes);
+
+    for(int j=0; j<npipes; j++){
+        pipdelete(pipid32_to_did32(pipes[j]));
+    }
+
+        npipes=0;
 
     for (int i=0; i<SHELL_MAXTOK; i++)
         childs[i] = -1;
@@ -144,14 +157,14 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
     int cur_before=0;
     int cur = 0;
     int next_cur = 0;
-    did32 did1
-    did32 did2=-1;
+    did32 did1;
+    did32 did2=-10;
 
     dump_tokens(tok, tokbuf, ntok, "non-built-in");
 
     while (cur < ntok) {
         //each time reinitial did1
-        did1=-1;
+        did1=-10;
         
         if (toktyp[cur] == SH_TOK_OTHER) {
             cmdtab_index = find_cmdtab_index(&tokbuf[tok[cur]]);
@@ -160,15 +173,14 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                 return false;
             }
 
-            ASSERT(toktyp[cur] == SH_TOK_OTHER);
+            //ASSERT(toktyp[cur] == SH_TOK_OTHER);
 
             for (next_cur=cur+1; next_cur<ntok; next_cur++) {
-                if (toktyp[next_cur] != SH_TOK_OTHER)
+                if ((toktyp[next_cur])!= SH_TOK_OTHER){
                     //find pipe creation
                     if (toktyp[next_cur] == SH_TOK_STICK){
                         
                         if(npipes >= MAXPIPES){
-                            fprintf("too much pipe!!");
                                 return false;
                         }
 
@@ -176,8 +188,7 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                         // record pipes to delete
                         pipes[npipes] = did32_to_pipid32(did1);
                         npipes++;
-                        next_cur++;
-                        if(next_curr>=ntok){
+                        if(next_cur>=ntok){
                             fprintf(dev,"%s (parsing)\n", SHELL_SYNERRMSG);
                             return false;
                         }
@@ -186,14 +197,14 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                     else{
                         break;
                     }
-            }
+            	}
+        	}	
 
             //ASSERT(toktyp[next_cur] != SH_TOK_OTHER || next_cur >= ntok);
 
             int num_args = next_cur-cur;
-            ASSERT(num_args > 0);
+            //ASSERT(num_args > 0);
             dprintf("(shell) num args: %d\n", num_args);
-
             /* Spawn child thread for non-built-in commands */
             childs[cur] = create(cmdtab[cmdtab_index].cfunc,
                                SHELL_CMDSTK, SHELL_CMDPRIO,
@@ -203,16 +214,22 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
             
             // make sure no more than max pipes
             if(did1==SYSERR){
-                fprintf("too much pipe!!");
+                return false;
+            }
+            /* If creation or argument copy fails, report error */
+            if ((childs[cur] == SYSERR) ||
+                (addargs(childs[cur], num_args, &tok[cur], tlen, &tokbuf[cur], &tmparg) == SYSERR) ) {
+                fprintf(dev, SHELL_CREATMSG);
                 return false;
             }
 
-            if(did1==-1){
-                if(did2==-1){
+            if(did1==-10){
+                if(did2==-10){
                     proctab[childs[cur]].prdesc[0] = stdinput;
                     proctab[childs[cur]].prdesc[1] = stdoutput;
                 }else{
                     //this means we have a pipe last time
+                    //kprintf("3");
                     proctab[childs[cur]].prdesc[0] = did2;
                     proctab[childs[cur]].prdesc[1] = stdoutput;
                     pipconnect(did2, childs[cur_before], childs[cur]);
@@ -220,20 +237,16 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
             }else{
                 if(did1==PIPELINE0){
                     //this means we have created the first pipe
+                    //kprintf("1");
                     proctab[childs[cur]].prdesc[0] = stdinput;
                     proctab[childs[cur]].prdesc[1] = did1;
                 }else{
                     //this means we have created more than one pipe
+                    //kprintf("2");
                     proctab[childs[cur]].prdesc[0] = did2;
                     proctab[childs[cur]].prdesc[1] = did1;
                     pipconnect(did2, childs[cur_before], childs[cur]);
                 }
-            }
-            /* If creation or argument copy fails, report error */
-            if ((childs[cur] == SYSERR) ||
-                (addargs(childs[cur], num_args, &tok[cur], tlen, &tokbuf[cur], &tmparg) == SYSERR) ) {
-                fprintf(dev, SHELL_CREATMSG);
-                return false;
             }
         } else {
 			fprintf(dev,"%s (parsing)\n", SHELL_SYNERRMSG);
@@ -242,7 +255,7 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
 
         //store perious command id and pipe id for pipe connect
         cur_before=cur;
-        cur = next_cur;
+        cur = next_cur+1;
         did2=did1;
     }
 
@@ -278,8 +291,6 @@ process	shell (
 	bool8	backgnd;		/* Run command in background?	*/
 	char	*outname, *inname;	/* Pointers to strings for file	*/
 	did32	stdinput, stdoutput;	/* Descriptors for redirected	*/
-    pipid32 pipes[MAXPIPES]; // store pipes id so that can delete it after all process finish
-    int32   npipes=0;      // number of pipes
 
 	/* Print shell banner and startup message */
 	fprintf(dev, "\n\n%s%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
@@ -290,6 +301,8 @@ process	shell (
 
 	/* Continually prompt the user, read input, and execute command	*/
 	while (TRUE) {
+        // delete all pipes to release pipes
+
         memset(tokbuf, 0, sizeof(tokbuf));
         memset(tok, 0, sizeof(tok));
         memset(buf, 0, sizeof(buf));
@@ -386,37 +399,17 @@ process	shell (
 		stdinput = stdoutput = dev;
 
 
-        bool8 result;
+        //bool8 result;
         // Attempt to handle built-in case.
         // If not handled, try non-built-in case.
         if (!handle_builtin(dev, backgnd,
                             ntok, tokbuf, tok, tlen,
                             outname, inname)) {
 
-            result=handle_non_builtin(dev, backgnd,
+            handle_non_builtin(dev, backgnd,
                                ntok, tokbuf, tok, tlen, toktyp,
-                               stdinput, stdoutput, outname, inname, pipes, npipes);
+                               stdinput, stdoutput, outname, inname);
         }
-
-        bool8 pipefinish = TRUE;
-
-        // this is to make sure all process related to pipes have finished before we can restart shell
-        if(result){
-            while(pipefinish){
-                pipefinish = FALSE;
-                for(int i=0; i<npipes; i++){
-                    pipefinish = (pipefinish || proctab[pipe_tables[pipes[i]].writer].prstate != PR_FREE);
-                    pipefinish = (pipefinish || proctab[pipe_tables[pipes[i]].reader].prstate != PR_FREE);
-                }
-            }
-
-            // delete all pipes to release pipes
-            for(int i=0; i<npipes; i++){
-                pipedelete(pipid32_to_did32(pipes[i]));
-            }
-        }
-
-        npipes=0;
 
 
     }

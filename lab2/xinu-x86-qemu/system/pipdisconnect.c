@@ -10,7 +10,7 @@ void cleanup(pipid32 pipid){
    pipe->readerid=0;
    pipe->writerid=0;
    semreset(pipe->writersem,PIPE_SIZE);
-   semreset(pipe->readersem,0)
+   semreset(pipe->readersem,0);
 }
 
 status pipdisconnect(did32 devpipe) {

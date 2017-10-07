@@ -26,6 +26,10 @@ struct	memblk	memlist;	/* List of free memory blocks		*/
 int	prcount;		/* Total number of live processes	*/
 pid32	currpid;		/* ID of currently executing process	*/
 
+
+/* pipe */
+struct pipe_t pipe_tables[MAXPIPES];
+
 /* Control sequence to reset the console colors and cusor positiion	*/
 
 #define	CONSOLE_RESET	" \033[0m\033[2J\033[;H"
@@ -150,6 +154,7 @@ static	void	sysinit()
 	int32	i;
 	struct	procent	*prptr;		/* Ptr to process table entry	*/
 	struct	sentry	*semptr;	/* Ptr to semaphore table entry	*/
+	struct  pipe_t  *pipe;      // for pipe table entry
 
 	/* Platform Specific Initialization */
 
@@ -209,6 +214,21 @@ static	void	sysinit()
 	}
 
     // LAB2: TODO: initialize pipe_tables[MAXPIPES]
+    for(pipid32 pipid = 0; pipid < MAXPIPES; pipid++){
+    	pipe = &pipe_tables[pipid];
+
+    	pipe->state = PIPE_FREE;
+    	// init
+    	pipe->owner = -1;
+   		pipe->writer = -1;
+    	pipe->reader = -1;
+    	pipe->writerid = -1;
+    	pipe->readerid = -1;
+    	pipe->writersem = -1;
+    	pipe->readersem = -1;
+    }
+
+
 
 	/* Initialize buffer pools */
 
