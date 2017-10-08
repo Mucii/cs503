@@ -23,19 +23,31 @@ devcall pipputc(struct dentry *devptr, char ch) {
     	return SYSERR;
     }
 
+    if(pipe->state==PIPE_OTHER){
+        pipdisconnect((did32)devptr->dvnum);
+        restore(mask);
+        return SYSERR;
+    }
+
     wait(pipe->writersem);
+
+    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
+        //kprintf("state1\n");
+        restore(mask);
+        return SYSERR;
+    }
 
     // if reader is disconnected, stop writting and clean up
     if(pipe->state==PIPE_OTHER){
     	pipdisconnect((did32)devptr->dvnum);
         restore(mask);
-    	return OK;
+    	return SYSERR;
     }
 
     // write buf
     pipe->buf[pipe->writerid] = ch;
     pipe->writerid++;
-    pipe->writer %= PIPE_SIZE;
+    pipe->writerid%= PIPE_SIZE;
     //kprintf(" put %c\n", pipe->buf[pipe->writerid-1]);
 
 

@@ -17,7 +17,6 @@ status pipdisconnect(did32 devpipe) {
       intmask mask;
    	struct pipe_t *pipe;
    	pipid32 pipid;
-   	struct sentry *sem;
 
    	mask = disable();
 
@@ -49,18 +48,16 @@ status pipdisconnect(did32 devpipe) {
 
    	if(pipe->writer == currpid){
    		// disconnnect writer
-   		//pipe->writer = -1;
-   		sem = &semtab[pipe->readersem];
+   		pipe->writer = -1;
    		// signal the read process
-   		if(sem->scount){
+   		if(semcount(pipe->readersem)<0){
    			signal(pipe->readersem);
    		}
    	}else{
    		// disconnnect writer
-   		//pipe->reader = -1;
-   		sem = &semtab[pipe->writersem];
+   		pipe->reader = -1;
    		// signal the read process
-   		if(sem->scount){
+   		if(semcount(pipe->writersem)<0){
    			signal(pipe->writersem);
    		}
    	}

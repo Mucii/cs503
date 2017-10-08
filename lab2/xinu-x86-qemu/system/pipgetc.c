@@ -9,41 +9,38 @@ devcall pipgetc(struct dentry *devptr) {
     mask=disable();
 
     if(isbadpipid(pipid)){
-        kprintf("bad2");
     	restore(mask);
     	return SYSERR;
     }
 
     pipe = &pipe_tables[pipid];
 
-    //kprintf("state is %d\n", pipe->state);
-
-    //kprintf("currpid is %d, reader is %d\n", currpid, pipe->reader);
-
-    if(proctab[pipe->writer].prstate == PR_FREE){
-        pipe->state=PIPE_OTHER;
-    }
-
     if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER) || currpid != pipe->reader){
-        //kprintf("state2\n");
     	restore(mask);
     	return SYSERR;
     }
 
-    if(pipe->state == PIPE_OTHER && semtab[pipe->readersem].scount <=0){
+    if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <=0){
         pipdisconnect((did32)devptr->dvnum);
+        restore(mask);
         return SYSERR;
     }
 
     wait(pipe->readersem);
     //kprintf("count is %d\n", semcount(pipe->readersem));
 
-    // when nonthing to read and wtier disconnected, clean up
-    if(pipe->state == PIPE_OTHER && semtab[pipe->readersem].scount < 0){
+    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
+        restore(mask);
+        return SYSERR;
+    }
+
+    if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <0){
         pipdisconnect((did32)devptr->dvnum);
         restore(mask);
         return SYSERR;
     }
+
+    
     ch = pipe->buf[pipe->readerid];
     pipe->readerid++;
     pipe->readerid %= PIPE_SIZE;
@@ -52,9 +49,8 @@ devcall pipgetc(struct dentry *devptr) {
     signal(pipe->writersem);
 
     
-    if(pipe->state == PIPE_OTHER && semtab[pipe->readersem].scount < 0){
+    if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <0){
         pipdisconnect((did32)devptr->dvnum);
-        return SYSERR;
     }
 
     restore(mask);

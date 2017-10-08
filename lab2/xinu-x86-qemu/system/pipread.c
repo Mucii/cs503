@@ -15,27 +15,30 @@ uint32 pipread(struct dentry *devptr, char* buf, uint32 len) {
 
     pipe = &pipe_tables[pipid];
 
-    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)|| currpid != pipe->reader){
-    	restore(mask);
-    	return SYSERR;
+    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER) || currpid != pipe->reader){
+        restore(mask);
+        return SYSERR;
+    }
+
+    if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <=0){
+        pipdisconnect((did32)devptr->dvnum);
+        restore(mask);
+        return SYSERR;
     }
 
     for(i=0; i<len; i++){
     	wait(pipe->readersem);
 
-    	// we should clean up the pipe
-    	if(pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER){
-            cleanup(pipid);
-    		restore(mask);
-    		return i;
-    	}	
+    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
+        restore(mask);
+        return i;
+    }
 
-    	// when nonthing to read and wtier disconnected, clean up
-   		if(pipe->state == PIPE_OTHER && semtab[pipe->readersem].scount < 0){
-        	pipdisconnect((did32)devptr->dvnum);
-        	restore(mask);
-        	return i;
-    	}
+    if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <0){
+        pipdisconnect((did32)devptr->dvnum);
+        restore(mask);
+        return i;
+    }
 
     	buf[i] = pipe->buf[pipe->readerid];
     	pipe->readerid++;
@@ -45,9 +48,10 @@ uint32 pipread(struct dentry *devptr, char* buf, uint32 len) {
     	signal(pipe->writersem);
     }
 
-    if(pipe->state == PIPE_OTHER && semtab[pipe->readersem].scount < 0){
-    	pipdisconnect((did32)devptr->dvnum);
+    if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <0){
+        pipdisconnect((did32)devptr->dvnum);
     }
+
 
     restore(mask);
 	return i;

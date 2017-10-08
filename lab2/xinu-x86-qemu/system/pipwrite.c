@@ -16,37 +16,45 @@ uint32 pipwrite(struct dentry *devptr, char* buf, uint32 len) {
     pipe = &pipe_tables[pipid];
 
     if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER) || currpid != pipe->writer){
-    	restore(mask);
-    	return SYSERR;
+        //kprintf("state1\n");
+        restore(mask);
+        return SYSERR;
+    }
+
+    if(pipe->state==PIPE_OTHER){
+        pipdisconnect((did32)devptr->dvnum);
+        restore(mask);
+        return SYSERR;
     }
 
     for(i = 0; i< len; i++){
     	wait(pipe->writersem);
 
     	// check the status each time
-    	if(pipe->state!=PIPE_CONNECTED){
-    		if(pipe->state==PIPE_OTHER){
-    			pipdisconnect((did32)devptr->dvnum);
-    			restore(mask);
-    			return i;
-    		}else{
-                cleanup(pipid);
-    			restore(mask);
-    			return i;
-    		}
-    	}
+    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
+        //kprintf("state1\n");
+        restore(mask);
+        return i;
+    }
+
+    // if reader is disconnected, stop writting and clean up
+    if(pipe->state==PIPE_OTHER){
+        pipdisconnect((did32)devptr->dvnum);
+        restore(mask);
+        return i;
+    }
 
     	pipe->buf[pipe->writerid] = buf[i];
     	pipe->writerid++;
-    	pipe->writer %= PIPE_SIZE;
-        kprintf(" write %c\n", pipe->buf[pipe->writerid-1]);
+    	pipe->writerid%= PIPE_SIZE;
+        //kprintf(" write %c\n", pipe->buf[pipe->writerid-1]);
 
 
     	signal(pipe->readersem);
 
     }
 
-    if(pipe->state!=PIPE_OTHER){
+    if(pipe->state==PIPE_OTHER){
         pipdisconnect((did32)devptr->dvnum);
     }
 
