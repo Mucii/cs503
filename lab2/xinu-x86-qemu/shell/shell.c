@@ -181,11 +181,14 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                     if (toktyp[next_cur] == SH_TOK_STICK){
                         
                         if(npipes >= MAXPIPES){
-                                return false;
+                            return false;
                         }
 
                         did1=pipcreate();
                         // record pipes to delete
+                        if(did1 == SYSERR){
+                            return false;
+                        }
                         pipes[npipes] = did32_to_pipid32(did1);
                         npipes++;
                         if(next_cur>=ntok){
@@ -206,6 +209,7 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
             //ASSERT(num_args > 0);
             dprintf("(shell) num args: %d\n", num_args);
             /* Spawn child thread for non-built-in commands */
+            // make prio larger
             childs[cur] = create(cmdtab[cmdtab_index].cfunc,
                                SHELL_CMDSTK, SHELL_CMDPRIO,
                                cmdtab[cmdtab_index].cname, 2, num_args, &tmparg);
@@ -259,16 +263,22 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
         did2=did1;
     }
 
+    int final_id;
+    // resume commands and rescdule
+    resched_cntl(DEFER_START);
     for (int i=0; i<SHELL_MAXTOK; i++) {
         if (childs[i] == -1)
             continue;
         msg = recvclr();
         resume(childs[i]);
-        if (!backgnd) {
+        final_id=i;
+    }
+    resched_cntl(DEFER_STOP);
+
+    if (!backgnd) {
+        msg = receive();
+        while (msg != childs[final_id]){
             msg = receive();
-            while (msg != childs[i]) {
-                msg = receive();
-            }
         }
     }
 

@@ -8,6 +8,7 @@ shellcmd xsh_count(int argc, char *argv[]) {
     char word[MAX_WORD_LEN];
 
 	while (TRUE) {
+        
         uint32 retval = getc(stdin);
 
         if (retval == '\0')
