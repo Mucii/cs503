@@ -15,6 +15,11 @@ uint32 pipread(struct dentry *devptr, char* buf, uint32 len) {
 
     pipe = &pipe_tables[pipid];
 
+    //kprintf("readerr is %d\n",pipe->readerid);
+
+    //kprintf("writerr is %d\n",pipe->writerid);
+
+
     if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER) || currpid != pipe->reader){
         restore(mask);
         return SYSERR;

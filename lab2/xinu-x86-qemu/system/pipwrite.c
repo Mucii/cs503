@@ -15,6 +15,11 @@ uint32 pipwrite(struct dentry *devptr, char* buf, uint32 len) {
 
     pipe = &pipe_tables[pipid];
 
+    //kprintf("readerw is %d\n",pipe->readerid);
+
+    //kprintf("writerw is %d\n",pipe->writerid);
+
+
     if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER) || currpid != pipe->writer){
         //kprintf("state1\n");
         restore(mask);
