@@ -17,6 +17,7 @@ syscall	kill(
 	int32	i;			/* Index into descriptors	*/
 	struct  pipe_t *pipe;
 
+
 	mask = disable();
 	if (isbadpid(pid) || (pid == NULLPROC)
 	    || ((prptr = &proctab[pid])->prstate) == PR_FREE) {
@@ -29,6 +30,15 @@ syscall	kill(
 	}
 
 	send(prptr->prparent, pid);
+
+
+	// this is to make sure we can have lastes pid
+	if(!isbadpid(prptr->prparent)){
+		if(proctab[prptr->prparent].prmsg<pid){
+			proctab[prptr->prparent].prmsg=pid;
+		}
+	}
+
 	for (i=0; i<3; i++) {
 		close(prptr->prdesc[i]);
 	}

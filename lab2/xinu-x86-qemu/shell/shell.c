@@ -275,10 +275,15 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
     }
     resched_cntl(DEFER_STOP);
 
+    //kprintf("final is is, %d\n",childs[final_id]);
+
+
     if (!backgnd) {
         msg = receive();
+        //kprintf("msg is, %d\n",msg);
         while (msg != childs[final_id]){
             msg = receive();
+            //kprintf("msg is, %d\n",msg);
         }
     }
 
