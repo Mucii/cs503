@@ -8,7 +8,7 @@ uint32 pipread(struct dentry *devptr, char* buf, uint32 len) {
 
     mask = disable();
 
-    if(isbadpipid(pipid)){
+    if(isbadpipid(pipid) || currpid != pipe->reader){
     	restore(mask);
     	return SYSERR;
     }
@@ -19,31 +19,31 @@ uint32 pipread(struct dentry *devptr, char* buf, uint32 len) {
 
     //kprintf("writerr is %d\n",pipe->writerid);
 
-
-    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER) || currpid != pipe->reader){
-        restore(mask);
-        return SYSERR;
-    }
-
-    if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <=0){
-        pipdisconnect((did32)devptr->dvnum);
-        restore(mask);
-        return SYSERR;
-    }
-
     for(i=0; i<len; i++){
+
+        if(pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER){
+            restore(mask);
+            return SYSERR;
+        }
+
+        if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <=0){
+            pipdisconnect((did32)devptr->dvnum);
+            restore(mask);
+            return i;
+        }
     	wait(pipe->readersem);
 
-    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
-        restore(mask);
-        return i;
-    }
+        if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
+            restore(mask);
+            return i;
+        }
 
-    if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <0){
-        pipdisconnect((did32)devptr->dvnum);
-        restore(mask);
-        return i;
-    }
+        //this is valid because we only have one reader, if count<0 means there is nothing to read.
+        if(pipe->state == PIPE_OTHER && semcount(pipe->readersem) <0){
+            pipdisconnect((did32)devptr->dvnum);
+            restore(mask);
+            return i;
+        }
 
     	buf[i] = pipe->buf[pipe->readerid];
     	pipe->readerid++;

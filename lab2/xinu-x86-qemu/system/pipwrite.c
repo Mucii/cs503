@@ -8,31 +8,27 @@ uint32 pipwrite(struct dentry *devptr, char* buf, uint32 len) {
 
     mask =disable();
 
-    if(isbadpipid(pipid)){
+    if(isbadpipid(pipid) || currpid != pipe->writer){
     	restore(mask);
     	return SYSERR;
     }
 
     pipe = &pipe_tables[pipid];
 
-    //kprintf("readerw is %d\n",pipe->readerid);
+    for(i = 0; i< len; i++){
 
-    //kprintf("writerw is %d\n",pipe->writerid);
-
-
-    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER) || currpid != pipe->writer){
+    if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
         //kprintf("state1\n");
         restore(mask);
-        return SYSERR;
+        return i;
     }
 
+    // if reader is disconnected, stop writting and clean up
     if(pipe->state==PIPE_OTHER){
         pipdisconnect((did32)devptr->dvnum);
         restore(mask);
-        return SYSERR;
+        return i;
     }
-
-    for(i = 0; i< len; i++){
     	wait(pipe->writersem);
 
     	// check the status each time
