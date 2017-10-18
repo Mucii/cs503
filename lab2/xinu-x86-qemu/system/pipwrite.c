@@ -8,15 +8,22 @@ uint32 pipwrite(struct dentry *devptr, char* buf, uint32 len) {
 
     mask =disable();
 
-    if(isbadpipid(pipid) || currpid != pipe->writer){
+    if(isbadpipid(pipid)){
     	restore(mask);
     	return SYSERR;
     }
 
     pipe = &pipe_tables[pipid];
 
+    // is not the writer
+    if(pipe->writer != currpid){
+        restore(mask);
+        return SYSERR;
+    }
+
     for(i = 0; i< len; i++){
 
+    // state is not right
     if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
         //kprintf("state1\n");
         restore(mask);
@@ -31,9 +38,8 @@ uint32 pipwrite(struct dentry *devptr, char* buf, uint32 len) {
     }
     	wait(pipe->writersem);
 
-    	// check the status each time
+    // state is not right
     if((pipe->state!=PIPE_CONNECTED && pipe->state!=PIPE_OTHER)){
-        //kprintf("state1\n");
         restore(mask);
         return i;
     }
@@ -48,16 +54,14 @@ uint32 pipwrite(struct dentry *devptr, char* buf, uint32 len) {
     	pipe->buf[pipe->writerid] = buf[i];
     	pipe->writerid++;
     	pipe->writerid%= PIPE_SIZE;
-        //kprintf(" write %c\n", pipe->buf[pipe->writerid-1]);
-
 
     	signal(pipe->readersem);
 
     }
 
-    if(pipe->state==PIPE_OTHER){
-        pipdisconnect((did32)devptr->dvnum);
-    }
+    //if(pipe->state == PIPE_OTHER){
+        //pipdisconnect((did32)devptr->dvnum);
+    //}
 
     restore(mask);
     return i;

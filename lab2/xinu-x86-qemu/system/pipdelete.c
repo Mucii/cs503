@@ -41,8 +41,6 @@ status pipdelete(did32 devpipe) {
     semdelete(pipe->readersem);
 
 
-    //kprintf("end delete %d\n", pipid);
-
 
     return OK;
 }

@@ -32,7 +32,7 @@ syscall	kill(
 	send(prptr->prparent, pid);
 
 
-	// this is to make sure we can have lastes pid
+	// this is to make sure we can have lastes pid which works in my shell.c
 	if(!isbadpid(prptr->prparent)){
 		if(proctab[prptr->prparent].prmsg<pid){
 			proctab[prptr->prparent].prmsg=pid;

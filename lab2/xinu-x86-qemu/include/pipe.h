@@ -10,8 +10,7 @@
 #define PIPE_OTHER 3
 
 
-#define isbadpipid(pipid)( (pipid < 0) || \
-        (pipid >= MAXPIPES))
+#define isbadpipid(pipid)    ((pipid < 0) || (pipid >= MAXPIPES))
 
 struct pipe_t {
 	pipid32 pipid;			    // Pipe ID

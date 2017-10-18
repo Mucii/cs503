@@ -12,8 +12,8 @@ did32 pipid32_to_did32(pipid32 pip) {
 }
 
 static pipid32 newpip(void){
-    int32 i;
     pipid32 pipid;
+    int32 i;
 
 
     // go over all table to find available pipe

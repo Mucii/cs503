@@ -37,6 +37,8 @@ const	struct	cmdent	cmdtab[] = {
 #define true 1
 #define false 0
 
+#define nopipe -10
+
 uint32	ncmd = sizeof(cmdtab) / sizeof(struct cmdent);
 
 
@@ -125,8 +127,6 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
 
     
     // delete all pipes to start over
-    //kprintf("npipes %d\n", npipes);
-
     for(int j=0; j<npipes; j++){
         pipdelete(pipid32_to_did32(pipes[j]));
     }
@@ -154,17 +154,17 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
         }
     }
 
-    int cur_before=0;
+    int cur_before = 0;
     int cur = 0;
     int next_cur = 0;
     did32 did1;
-    did32 did2=-10;
+    did32 did2 = nopipe;
 
     dump_tokens(tok, tokbuf, ntok, "non-built-in");
 
     while (cur < ntok) {
         //each time reinitial did1
-        did1=-10;
+        did1 = nopipe;
         
         if (toktyp[cur] == SH_TOK_OTHER) {
             cmdtab_index = find_cmdtab_index(&tokbuf[tok[cur]]);
@@ -191,6 +191,8 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                         }
                         pipes[npipes] = did32_to_pipid32(did1);
                         npipes++;
+
+                        // to make sure we would not construct a one side pipe
                         if(next_cur>=ntok){
                             fprintf(dev,"%s (parsing)\n", SHELL_SYNERRMSG);
                             return false;
@@ -203,7 +205,7 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
             	}
         	}	
 
-            //ASSERT(toktyp[next_cur] != SH_TOK_OTHER || next_cur >= ntok);
+            ASSERT(toktyp[next_cur] != SH_TOK_OTHER || next_cur >= ntok);
 
             int num_args = next_cur-cur;
             //ASSERT(num_args > 0);
@@ -227,26 +229,23 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                 return false;
             }
 
-            if(did1==-10){
-                if(did2==-10){
+            if(did1==nopipe){
+                if(did2==nopipe){
                     proctab[childs[cur]].prdesc[0] = stdinput;
                     proctab[childs[cur]].prdesc[1] = stdoutput;
                 }else{
                     //this means we have a pipe last time
-                    //kprintf("3");
                     proctab[childs[cur]].prdesc[0] = did2;
                     proctab[childs[cur]].prdesc[1] = stdoutput;
                     pipconnect(did2, childs[cur_before], childs[cur]);
                 }
             }else{
-                if(did1==PIPELINE0){
+                if(did2==nopipe){
                     //this means we have created the first pipe
-                    //kprintf("1");
                     proctab[childs[cur]].prdesc[0] = stdinput;
                     proctab[childs[cur]].prdesc[1] = did1;
                 }else{
                     //this means we have created more than one pipe
-                    //kprintf("2");
                     proctab[childs[cur]].prdesc[0] = did2;
                     proctab[childs[cur]].prdesc[1] = did1;
                     pipconnect(did2, childs[cur_before], childs[cur]);
@@ -275,15 +274,12 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
     }
     resched_cntl(DEFER_STOP);
 
-    //kprintf("final is is, %d\n",childs[final_id]);
 
-
+    // see kill how I make this works though shell may receive several msg before receive()
     if (!backgnd) {
         msg = receive();
-        //kprintf("msg is, %d\n",msg);
         while (msg != childs[final_id]){
             msg = receive();
-            //kprintf("msg is, %d\n",msg);
         }
     }
 
