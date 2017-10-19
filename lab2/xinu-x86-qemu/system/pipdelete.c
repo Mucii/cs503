@@ -20,6 +20,7 @@ status pipdelete(did32 devpipe) {
     pipe = &pipe_tables[pipid]; 
 
     //if is not the the owner of the pipe
+    //aksed by the ta to modify it
     if(currpid != pipe->owner){
         restore(mask);
         return SYSERR;

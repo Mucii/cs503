@@ -58,6 +58,7 @@ syscall	kill(
 			//check the state and change it
    			if(pipe->state == PIPE_OTHER){
    				cleanup(i);
+   				// this should not work because it has been cleaned
    			}else{
    				pipe->state = PIPE_OTHER;
    			}

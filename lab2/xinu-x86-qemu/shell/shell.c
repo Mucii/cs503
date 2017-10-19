@@ -42,7 +42,7 @@ const	struct	cmdent	cmdtab[] = {
 uint32	ncmd = sizeof(cmdtab) / sizeof(struct cmdent);
 
 
-pipid32 pipes[MAXPIPES]; // store pipes id so that can delete it after all process finish
+did32 pipes[MAXPIPES]; // store pipes id so that can delete it after all process finish
 int32   npipes=0;      // number of pipes
 /************************************************************************/
 /* shell  -  Provide an interactive user interface that executes	*/
@@ -124,14 +124,17 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
     int msg;
 	pid32 childs[SHELL_MAXTOK];
     int32 cmdtab_index;
-
     
     // delete all pipes to start over
     for(int j=0; j<npipes; j++){
-        pipdelete(pipid32_to_did32(pipes[j]));
+        pipdelete(pipes[j]);
     }
 
-        npipes=0;
+    for(int j=0; j<MAXPIPES; j++){
+        pipes[j]=-1;
+    }
+
+    npipes=0;
 
     for (int i=0; i<SHELL_MAXTOK; i++)
         childs[i] = -1;
@@ -189,7 +192,7 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                         if(did1 == SYSERR){
                             return false;
                         }
-                        pipes[npipes] = did32_to_pipid32(did1);
+                        pipes[npipes] = did1;
                         npipes++;
 
                         // to make sure we would not construct a one side pipe
