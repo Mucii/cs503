@@ -126,13 +126,14 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
     int32 cmdtab_index;
     
     // delete all pipes to start over
-    /*for(int j=0; j<npipes; j++){
+    // this is just in case we have all pipes created but not connected
+    for(int j=0; j<npipes; j++){
         pipdelete(pipes[j]);
     }
 
     for(int j=0; j<MAXPIPES; j++){
         pipes[j]=-1;
-    }*/
+    }
 
     npipes=0;
 

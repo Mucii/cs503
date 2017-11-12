@@ -16,7 +16,7 @@ void cleanup(pipid32 pipid){
 status pipdisconnect(did32 devpipe) {
       intmask mask;
    	struct pipe_t *pipe;
-      struct procent *proct;
+      //struct procent *proct;
    	pipid32 pipid;
 
    	mask = disable();
@@ -38,25 +38,25 @@ status pipdisconnect(did32 devpipe) {
    	}
 
    	//check the state and change it
+      // as in piazza we do not have to clean device
    	if(pipe->state == PIPE_OTHER){
    		cleanup(pipid);
-         proct = &proctab[currpid];
+         //proct = &proctab[currpid];
          // clean up the device
-         if(proct->prdesc[0] == devpipe){
+         /*if(proct->prdesc[0] == devpipe){
             proct->prdesc[0] = -1;
          }else if(proct->prdesc[1] == devpipe){
-            proct->prdesc[1] = -1;
-         }
+           */
    	}else if (pipe->state == PIPE_CONNECTED){
          // we do not do clean up when only one side disconnected
    		 pipe->state = PIPE_OTHER;
-          proct = &proctab[currpid];
+          //proct = &proctab[currpid];
          // clean up the device
-         if(proct->prdesc[0] == devpipe){
+         /*if(proct->prdesc[0] == devpipe){
             proct->prdesc[0] = -1;
          }else if(proct->prdesc[1] == devpipe){
             proct->prdesc[1] = -1;
-         }
+         }*/
    	}else{
    		restore(mask);
    		return SYSERR;
