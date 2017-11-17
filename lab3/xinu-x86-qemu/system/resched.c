@@ -45,6 +45,8 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
   // Lab3. TODO: change the page directories as a process is ctx out
 
+	set_pd_reg(VD_TO_VPN(ptnew->prpdptr));
+
 	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
 
 	/* Old process returns here when resumed */

@@ -53,6 +53,7 @@ struct procent {		/* Entry in the process table		*/
 	uint16	prstate;	/* Process state: PR_CURR, etc.		*/
 	pri16	prprio;		/* Process priority			*/
 	char	*prstkptr;	/* Saved stack pointer			*/
+
 	char	*prstkbase;	/* Base of run time stack		*/
 	uint32	prstklen;	/* Stack length in bytes		*/
 	char	prname[PNMLEN];	/* Process name				*/
@@ -63,6 +64,12 @@ struct procent {		/* Entry in the process table		*/
 	int16	prdesc[NDESC];	/* Device descriptors for process	*/
 
   /* Lab3 TODO: add more structures as required for vheap etc. */
+	pd_t    *prpdptr;   /* Saved page dir pointer*/
+	uint32  vsize;       /* Size of the heap */
+	uint32  vcreate;     /* this is a flag to mark whether it is first time the process allocate memory*/
+	struct memblk prvmem;      /* vmem list pointer*/
+
+
 };
 
 /* Marker for the top of a process stack (used to help detect overflow)	*/

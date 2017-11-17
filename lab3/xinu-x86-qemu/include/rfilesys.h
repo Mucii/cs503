@@ -22,11 +22,11 @@
 #endif
 
 #ifndef	RF_SERVER_PORT
-#define	RF_SERVER_PORT	33123
+#define	RF_SERVER_PORT	33720
 #endif
 
 #ifndef	RF_LOC_PORT
-#define	RF_LOC_PORT	33123
+#define	RF_LOC_PORT	33720
 #endif
 
 struct	rfdata	{

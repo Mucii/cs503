@@ -26,7 +26,6 @@ char  	*getstk(
 	curr = memlist.mnext;
 	fits = NULL;
 	fitsprev = NULL;  /* Just to avoid a compiler warning */
-
 	while (curr != NULL) {			/* Scan entire list	*/
 		if (curr->mlength >= nbytes) {	/* Record block address	*/
 			fits = curr;		/*   when request fits	*/

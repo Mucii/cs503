@@ -10,7 +10,7 @@
 /* Set to 1 to test page replacement
  * Set to 0 to check page fault handling is correct
  */
-#define PAGE_REPLACEMENT 1
+#define PAGE_REPLACEMENT 0
 
 // Return a deterministic value per addr for testing.
 uint32 get_test_value(uint32 *addr) {
@@ -34,10 +34,12 @@ static void do_policy_test(void) {
   // Write data
   for (uint32 i = 0; i<npages; i++) {
     uint32 *p = (uint32*)(mem + (i * PAGESIZE));
+    //uint32 *p1 = (uint32*)(mem + (i * PAGESIZE));
 
-    // kprintf("Write Iteration [%3d] at 0x%08x\n", i, p);
+    kprintf("Write Iteration [%3d] at 0x%08x\n", i, p);
     for (uint32 j=0; j<PAGESIZE; j=j+4) {
       uint32 v = get_test_value(p);
+      //*p1++ = v;
       *p++ = v;
     }
 
@@ -49,6 +51,7 @@ static void do_policy_test(void) {
     uint32 *p = (uint32*)(mem + (i * PAGESIZE));
     kprintf("Check Iteration [%3d] at 0x%08x\n", i, p);
     for (uint32 j=0; j<PAGESIZE; j=j+4) {
+      //uint32 v = *p;//get_test_value(p);
       uint32 v = get_test_value(p);
       ASSERT(*p++ == v);
     }

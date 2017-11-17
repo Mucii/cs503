@@ -36,12 +36,13 @@ pid32	vcreate(
 	if (((saddr = (uint32 *)getstk(ssize)) ==
 	    (uint32 *)SYSERR ) ||
 	    (pid=newpid()) == SYSERR || priority < 1 ) {
+		kprintf("pid %d\n",pid);
+		kprintf("ssard %d\n",*saddr);
 		restore(mask);
 		return SYSERR;
 	}
 
   // Lab3 TODO. set up page directory, allocate bs etc.
-
 	prcount++;
 	prptr = &proctab[pid];
 
@@ -100,8 +101,70 @@ pid32	vcreate(
 	*--saddr = 0;			/* %esi */
 	*--saddr = 0;			/* %edi */
 	*pushsp = (unsigned long) (prptr->prstkptr = (char *)saddr);
+
+
+	// allocate a pd for the process
+	//kprintf("start allocate pd\n");
+
+	if((prptr->prpdptr = pd_allocate())==NULL){
+		prcount--;
+		kill(pid);
+		kprintf("can not allocate pd\n");
+		restore(mask);
+		return SYSERR;
+	}
+
+	prptr->vsize = hsize;
+	prptr->vcreate = 1;
+
+	// allocate bs for process
+	uint32 remain_vsize = hsize;
+	uint32 size;
+	bsd_t bsid;
+	uint32 offset = 0;
+	//kprintf("start allocate bs\n");
+	while(remain_vsize > 0){
+		//check size to allocate
+		if(remain_vsize > MAX_PAGES_PER_BS){
+			size = MAX_PAGES_PER_BS;
+		}else{
+			size = remain_vsize;
+		}
+
+		remain_vsize -= size;
+
+		//clean up mapping if allocate fail
+		if((bsid = allocate_bs(size))==SYSERR){
+			rm_bs_map(pid);
+			kill(pid);
+			kprintf("can not allocate bs\n");
+			restore(mask);
+			return SYSERR;
+		}
+
+		// add bs mapping
+		if(add_bs_map(pid, VPN0+offset, size, bsid) == SYSERR){
+			rm_bs_map(pid);
+			kill(pid);
+			kprintf("can not add bs\n");
+			restore(mask);
+			return SYSERR;
+		}
+
+		offset += size; 
+
+	}
+
+	//initial virtual memory
+	//kprintf("start allocate virtual memory\n");
+
+	// note  if this is called , will introduce a error
+	prptr->prvmem.mnext = (struct memblk*) VPN_TO_VD(VPN0);;
+
+	prptr->prvmem.mlength = hsize * NBPG;
 	
 	restore(mask);
+	
 	return pid;
 }
 

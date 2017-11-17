@@ -60,6 +60,12 @@ pid32	create(
 	prptr->prdesc[1] = WCONSOLE;
 	prptr->prdesc[2] = WCONSOLE;
 
+	// create a pd to avoid fault
+
+	if((prptr->prpdptr = pd_allocate()) == NULL){
+		return SYSERR;
+	}
+
 	/* Initialize stack as if the process was called		*/
 
 	*saddr = STACKMAGIC;
@@ -98,6 +104,7 @@ pid32	create(
 	*--saddr = 0;			/* %esi */
 	*--saddr = 0;			/* %edi */
 	*pushsp = (unsigned long) (prptr->prstkptr = (char *)saddr);
+
 	restore(mask);
 
     dprintf(" -> pid : %d\n", pid);

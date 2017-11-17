@@ -25,6 +25,14 @@ struct	procent	proctab[NPROC];	/* Process table			*/
 struct	sentry	semtab[NSEM];	/* Semaphore table			*/
 struct	memblk	memlist;	/* List of free memory blocks		*/
 
+inverted_page inverted_page_tab[NFRAMES]; // inverted tab
+frame_t frame_tab[NFRAMES];					// frame tab
+frame_t *frame_head;                      // fifo head
+bs_map bs_map_tab[MAX_ID-MIN_ID+1];		// bs map head
+
+uint32 count_faults = 0;
+
+
 /* Lab3. frames metadata handling */
 frame_md_t frame_md;
 
@@ -89,6 +97,7 @@ void	nulluser()
 
 	rdstab[0].rd_comproc = create(rdsprocess, RD_STACK, RD_PRIO,
 					"rdsproc", 1, &rdstab[0]);
+
 	if(rdstab[0].rd_comproc == SYSERR) {
 		panic("Cannot create remote disk process");
 	}
@@ -155,6 +164,12 @@ static	void	sysinit()
 		prptr->prname[0] = NULLCH;
 		prptr->prstkbase = NULL;
 		prptr->prprio = 0;
+
+
+		// initial vmemory
+		prptr->prpdptr = NULL;
+		prptr->vsize = 0;
+		prptr->vcreate = 0;
 	}
 
 	/* Initialize the Null process entry */
@@ -178,8 +193,6 @@ static	void	sysinit()
 	}
 
 	/* Initialize buffer pools */
-
-	bufinit();
 
 	/* Create a ready list for processes */
 
@@ -207,6 +220,43 @@ static	void	sysinit()
 static void initialize_paging()
 {
 	/* LAB3 TODO */
+
+	currpolicy = FIFO;
+
+	//initial frame
+	frame_initial();
+
+	kprintf("frame initialize\n\n");
+
+	//initial bs map
+	initial_bs_map_tab();
+
+	kprintf("bs map initialize\n\n");
+
+	//initial global page table
+	init_global_pt();
+
+	kprintf("global pt initialize\n\n");
+
+	set_evec(14, (uint32)pgfault);
+
+	kprintf("handller initialize\n\n");
+
+	// allocate pd for null process
+	if ((proctab[NULLPROC].prpdptr = pd_allocate()) == NULL)
+        return;
+
+    kprintf("null process pd initialize\n\n");
+
+    //set register
+
+    set_pd_reg(VD_TO_VPN(proctab[NULLPROC].prpdptr));
+
+    kprintf("register initialize\n\n");
+
+    enable_paging();
+
+    kprintf("paging initialize\n\n");
 
 	return;
 }
