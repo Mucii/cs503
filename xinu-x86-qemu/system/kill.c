@@ -44,9 +44,9 @@ syscall	kill(
 			//write back frame to bs
 			if(frame_now->type == FRAME_PG){
 				curr_bs_map = get_bs_map(pid, inverted_page_now->vpn);
-				kprintf("inverted vpn%d\n",inverted_page_now->vpn);
-				kprintf("bs map vpn%d\n",curr_bs_map->vpn);
-				kprintf("bs id%d\n",curr_bs_map->bs_id);
+				//kprintf("inverted vpn%d\n",inverted_page_now->vpn);
+				//kprintf("bs map vpn%d\n",curr_bs_map->vpn);
+				//kprintf("bs id%d\n",curr_bs_map->bs_id);
 				open_bs(curr_bs_map->bs_id);
 				write_bs((char*)((FRAME0 + i) * NBPG), curr_bs_map->bs_id, inverted_page_now->vpn - curr_bs_map->vpn);
 				close_bs(curr_bs_map->bs_id);

@@ -30,8 +30,8 @@ char  	*vgetmem(
     prev = &prptr->prvmem;
 	curr = prev->mnext;
 
-	kprintf("length is %u\n", curr->mlength);
-	kprintf("length 1 is %u\n",prptr->vsize * NBPG);
+	//kprintf("length is %u\n", curr->mlength);
+	//kprintf("length 1 is %u\n",prptr->vsize * NBPG);
 	while (curr != NULL){
 		if (curr->mlength == nbytes) {	/* Block is exact match	*/
 			prev->mnext = curr->mnext;

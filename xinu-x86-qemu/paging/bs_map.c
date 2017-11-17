@@ -17,7 +17,8 @@ bs_map* get_bs_map(pid32 pid, uint32 vpn){
 			/*kprintf("bs allocated %d\n",(int32)curr_bs->isallocated);
 			kprintf("bs map allocated %d\n",(int32)curr_bs_map->allocated);
 			kprintf("vpn allocated %d\n",(int32)curr_bs_map->vpn);
-			kprintf("size allocated %d\n",(int32)curr_bs_map->npg);*/
+			kprintf("size allocated %d\n",(int32)curr_bs_map->npg);
+			kprintf("target vpn is %d\n",vpn);*/
 			continue;
 		}else{
 			return curr_bs_map;

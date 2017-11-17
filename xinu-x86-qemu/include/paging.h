@@ -66,10 +66,10 @@ extern inverted_page inverted_page_tab[];
 
 // this is for virtual addrees /////////////////////////////
 
-typedef struct {
+typedef struct { 
 	uint32 pg_offset    : 12;
-    uint32 pt_offset    : 10;
-    uint32 pd_offset    : 10;  
+	uint32 pt_offset    : 10;
+	uint32 pd_offset    : 10;
 } vd_t;
 
 ///////////////////////////////////////////////////////////
@@ -101,7 +101,7 @@ extern uint32 count_faults;
 #define VPN0        4096    /* first start vpn*/
 
 #ifndef NFRAMES
-#define NFRAMES		3072	/* number of frames		*/
+#define NFRAMES		500	/* number of frames		*/
 #endif
 
 #define MAP_SHARED 1
@@ -128,11 +128,11 @@ extern uint32 count_faults;
 
 // transformation function between vpn, vd, pd, framedid////
 
-#define VPN_TO_VD(vpn) ((uint32)vpn * NBPG)
-#define FID_TO_VD(fid) (((uint32)fid+FRAME0) * NBPG)
-#define VD_TO_VPN(vd)  ((uint32)vd / NBPG)
-#define VD_TO_FID(vd)  ((uint32)vd / NBPG-FRAME0)
-#define FID_TO_VPN(fid) ((uint32)fid+FRAME0)
+#define VPN_TO_VD(vpn) (uint32)((uint32)vpn * NBPG)
+#define FID_TO_VD(fid) (uint32)(((uint32)fid+FRAME0) * NBPG)
+#define VD_TO_VPN(vd)  (uint32)((uint32)vd / NBPG)
+#define VD_TO_FID(vd)  (uint32)((uint32)vd / NBPG-FRAME0)
+#define FID_TO_VPN(fid) (uint32)((uint32)fid+FRAME0)
 
 
 // in /paging/page_enable.c
@@ -161,7 +161,7 @@ extern int32 get_free_frame(void);
 extern int32 frame_allocate(void);
 
 // in paging/pg_fault_handler.c
-extern int32 pg_fault_handler(void);
+extern void pg_fault_handler(void);
 //extern uint32 get_faults(void);
 
 // in paging/pgfault.s

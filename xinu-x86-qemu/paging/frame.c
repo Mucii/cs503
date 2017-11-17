@@ -43,7 +43,8 @@ int32 get_free_frame_fifo(void){
 		//only replace pg
 		if(frame_now->type == FRAME_PG){
 			frameid = frame_now->frame_id;
-
+			//kprintf("remove frame %d\n",frameid);
+			//kprintf("remove frame type %d\n",frame_now->type);
 			// remove frame from the linked list
 			if(prev_frame == NULL){
 				//adjust head
@@ -53,8 +54,8 @@ int32 get_free_frame_fifo(void){
 				prev_frame->next_frame = frame_now->next_frame;
 				frame_now->next_frame = (frame_t *)NULL;
 			}
-			restore(mask);
-			return frameid;
+		restore(mask);
+		return frameid;
 		}
 		prev_frame = frame_now;
 		frame_now = frame_now->next_frame;
@@ -118,10 +119,15 @@ int32 free_frame(int32 frame_id){
 	curr_vpn = inverted_page_tab[frame_id].vpn;
 	curr_pid = inverted_page_tab[frame_id].pid;
 
-
+	/*kprintf("frame id is %d\n",frame_id);
+	kprintf("vpn is %d\n",curr_vpn);*/
 	//get vir address
-	virtual_address = (vd_t*)VPN_TO_VD(curr_vpn);
-
+	uint32 vaddress =  VPN_TO_VD(curr_vpn);
+	virtual_address = (vd_t *)(&vaddress);
+	/*kprintf("vd is %u\n",virtual_address);
+	kprintf("vdpd is %u\n",virtual_address->pd_offset);
+	kprintf("vdpt is %u\n",virtual_address->pt_offset);
+	kprintf("vdpg is %u\n",virtual_address->pg_offset);*/
 	//get curr pd
 	curr_pd = proctab[curr_pid].prpdptr;
 
@@ -136,7 +142,9 @@ int32 free_frame(int32 frame_id){
 	if(curr_pid == currpid){
 		// check invlpg;
 		tmp = curr_vpn;
+		asm("pushl %eax");
 		asm("invlpg tmp");
+		asm("popl %eax");
 	}
 
 	//In the inverted page table, decrement the reference count of the frame occupied by pt.
@@ -169,13 +177,16 @@ int32 free_frame(int32 frame_id){
 
 		// Write the page back to the backing store. 
 		uint32 offset = curr_vpn - curr_bs_map->vpn;
-
+		//uint32 *write = (uint32 *)FID_TO_VD(frame_id);
+		//vaddress = *write;
+		//*write = vaddress;
+		//kprintf("write back p is %u\n",vaddress);
 		open_bs(curr_bs_map->bs_id);
-		write_bs((char*)((FRAME0 + frame_id) * NBPG), curr_bs_map->bs_id, offset);
+		write_bs((char*)FID_TO_VD(frame_id), curr_bs_map->bs_id, offset);
 		close_bs(curr_bs_map->bs_id);
 
 	}
-
+	hook_pswap_out(curr_pid,curr_vpn,frame_id);
 	restore(mask);
 	return OK;
 }
@@ -263,7 +274,6 @@ int32 frame_allocate(void){
 
 		temp_frame->next_frame = curr_frame;
 	}
-	kprintf("frame id is %d\n",frameid);
 	restore(mask);
 
 	return frameid;

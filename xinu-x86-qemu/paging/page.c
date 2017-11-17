@@ -12,7 +12,6 @@ pt_t* pt_allocate(void){
 	frame_t *curr_frame;
 	pt_t *curr_pt;
 
-
 	if((frameid = frame_allocate()) == SYSERR){
 		return (pt_t*) NULL;
 	}
@@ -21,6 +20,8 @@ pt_t* pt_allocate(void){
 	curr_frame = &frame_tab[frameid];
 
 	curr_frame->type = FRAME_PT;
+
+	//kprintf("type is %d\n",frame_tab[frameid].type);
 
 	// clean pt
 	curr_pt = (pt_t*)FID_TO_VD(frameid);
@@ -39,8 +40,8 @@ pt_t* pt_allocate(void){
 		curr_pt[i].pt_avail = 0;		/* for programmer's use		*/
 		curr_pt[i].pt_base = 0;         // this will be aloocated when page is created
 	}
-
-	//hook_ptable_create(frameid);
+	//kprintf("create pt frame is %d\n",frameid);
+	hook_ptable_create(frameid);
 	return curr_pt;
 }
 
