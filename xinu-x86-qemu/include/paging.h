@@ -101,7 +101,7 @@ extern uint32 count_faults;
 #define VPN0        4096    /* first start vpn*/
 
 #ifndef NFRAMES
-#define NFRAMES		500	/* number of frames		*/
+#define NFRAMES		20	/* number of frames		*/
 #endif
 
 #define MAP_SHARED 1
