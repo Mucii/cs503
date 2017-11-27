@@ -35,27 +35,16 @@ syscall	kill(
 	// Frames should be released
 	frame_t *frame_now;
 	inverted_page *inverted_page_now;
-	bs_map *curr_bs_map;
+	//bs_map *curr_bs_map;
 	for(i=0; i<NFRAMES; i++){
 		//find frame
 		inverted_page_now = &inverted_page_tab[i];
 		frame_now = &frame_tab[i];
 		if(inverted_page_now->pid == pid){
-			//write back frame to bs
-			if(frame_now->type == FRAME_PG){
-				curr_bs_map = get_bs_map(pid, inverted_page_now->vpn);
-				//kprintf("inverted vpn%d\n",inverted_page_now->vpn);
-				//kprintf("bs map vpn%d\n",curr_bs_map->vpn);
-				//kprintf("bs id%d\n",curr_bs_map->bs_id);
-				open_bs(curr_bs_map->bs_id);
-				write_bs((char*)((FRAME0 + i) * NBPG), curr_bs_map->bs_id, inverted_page_now->vpn - curr_bs_map->vpn);
-				close_bs(curr_bs_map->bs_id);
-			}
-
+			
 			// remove frame from fifo list
-			if(currpolicy == FIFO){
-				rm_frame_fifo(i);
-			}
+		
+			rm_frame_fifo(i);
 
 			// clean frame and inverted map
 			// initial frame
@@ -63,6 +52,7 @@ syscall	kill(
 			frame_now->frame_id = i;
 			frame_now->state = FRAME_FREE;
 			frame_now->type = -1;
+			frame_now->dirty = 0;
 			frame_now->next_frame = (frame_t *)NULL;
 
 

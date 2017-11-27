@@ -4,8 +4,11 @@
 
 void frame_initial(void){
 	int i;
+	intmask mask;
 	frame_t *frame_now;
 	inverted_page *inverted_page_now;
+
+	mask = disable();
 	frame_head = (frame_t *)NULL;
 
 	for(i=0; i<NFRAMES; i++){
@@ -16,6 +19,7 @@ void frame_initial(void){
 		frame_now->state = FRAME_FREE;
 		frame_now->type = -1;
 		frame_now->next_frame = (frame_t *)NULL;
+		frame_now->dirty = 0;
 
 
 		// intial inverted page table
@@ -24,59 +28,19 @@ void frame_initial(void){
 		inverted_page_now->pid = -1;
 		inverted_page_now->vpn = 0;
 	}
-
+	restore(mask);
 	return ;
 }
 
-int32 get_free_frame_fifo(void){
-	intmask mask;
-	int32 frameid;
-	frame_t *prev_frame;
-	frame_t *frame_now;
-
-	mask=disable();
-
-	frame_now = frame_head;
-	prev_frame = NULL;
-
-	while(frame_now != NULL){
-		//only replace pg
-		if(frame_now->type == FRAME_PG){
-			frameid = frame_now->frame_id;
-			//kprintf("remove frame %d\n",frameid);
-			//kprintf("remove frame type %d\n",frame_now->type);
-			// remove frame from the linked list
-			if(prev_frame == NULL){
-				//adjust head
-				frame_head = frame_now->next_frame;
-				frame_now->next_frame = (frame_t *)NULL;
-			}else{
-				prev_frame->next_frame = frame_now->next_frame;
-				frame_now->next_frame = (frame_t *)NULL;
-			}
-		restore(mask);
-		return frameid;
-		}
-		prev_frame = frame_now;
-		frame_now = frame_now->next_frame;
-	}
-	restore(mask);
-	return SYSERR;
-}
-
-
-int32 get_free_frame_gca(void){
-	// to be finished
-	return SYSERR;
-}
-
 int32 rm_frame_fifo(int32 frameid){
+	intmask mask;
 	frame_t *prev_frame;
 	frame_t *frame_now;
 
+	mask = disable();
+
 	frame_now = frame_head;
 	prev_frame = NULL;
-
 	while(frame_now != NULL){
 		if(frame_now->frame_id == frameid){
 			// remove frame from the linked list
@@ -88,21 +52,89 @@ int32 rm_frame_fifo(int32 frameid){
 				prev_frame->next_frame = frame_now->next_frame;
 				frame_now->next_frame = (frame_t *)NULL;
 			}
-			break;
+			frame_now->state = FRAME_FREE;
+			frame_now->type = -1;
+			frame_now->next_frame = (frame_t *)NULL;
+			restore(mask);
+			return OK;
 		}
 		prev_frame = frame_now;
 		frame_now = frame_now->next_frame;
+	}
+	return SYSERR;
+}
+
+int32 get_free_frame_fifo(void){
+	intmask mask;
+	int32 frameid;
+	frame_t *frame_now;
+
+	mask=disable();
+
+	frame_now = frame_head;
+
+	while(frame_now != NULL){
+		//only replace pg
+		if(frame_now->type == FRAME_PG){
+			frameid = frame_now->frame_id;
+			rm_frame_fifo(frameid);
+			restore(mask);
+			return frameid;
+		}
+		frame_now = frame_now->next_frame;
+	}
+	restore(mask);
+	return SYSERR;
+}
+
+int32 get_free_frame_gca(void){
+	intmask mask;
+	int32 curr_frameid = (last_frameid+1)%NFRAMES;
+	frame_t *curr_frame;
+	uint32 vpn;
+	uint32 vd;
+	vd_t *fault_vd;
+	pd_t *curr_pd;
+	pt_t *curr_pt;
+	int32 i;
+
+	mask=disable();
+	// at most go over 3 times
+	for(i=0; i<4*NFRAMES; i++){
+		curr_frame = &frame_tab[curr_frameid];
+		//here would be not free frame
+		// if the frame is for page
+		if(curr_frame->type == FRAME_PG){
+			vpn = inverted_page_tab[curr_frameid].vpn;
+			vd = VPN_TO_VD(vpn);
+			fault_vd = (vd_t *)(&vd);
+			curr_pd = proctab[currpid].prpdptr;
+			curr_pt = (pt_t*)VPN_TO_VD(curr_pd[fault_vd->pd_offset].pd_base);
+			// (0,0) case
+			if((curr_pt[fault_vd->pt_offset].pt_acc == 0) && (curr_pt[fault_vd->pt_offset].pt_dirty == 0)){
+				curr_frame->type = -1;
+				last_frameid = curr_frameid;
+				rm_frame_fifo(curr_frameid);
+				restore(mask);
+				return curr_frameid;
+			// （1，0） case
+			}else if((curr_pt[fault_vd->pt_offset].pt_acc == 1) && (curr_pt[fault_vd->pt_offset].pt_dirty == 0)){
+				curr_pt[fault_vd->pt_offset].pt_acc = 0;
+			// （1，1） case
+			}else if((curr_pt[fault_vd->pt_offset].pt_acc == 1) && (curr_pt[fault_vd->pt_offset].pt_dirty == 1)){
+				curr_pt[fault_vd->pt_offset].pt_dirty =0;
+				curr_frame->dirty = 1;
+			}
 		}
 
-	frame_now = &frame_tab[frameid];
+		curr_frameid = (curr_frameid+1)%NFRAMES;
 
-	frame_now->state = FRAME_FREE;
-	frame_now->type = -1;
-	frame_now->next_frame = (frame_t *)NULL;
-
-	return OK;
-
+	}
+	restore(mask);
+	return SYSERR;
 }
+
+
 
 int32 free_frame(int32 frame_id){
 	// free the frame
@@ -113,21 +145,17 @@ int32 free_frame(int32 frame_id){
 	pd_t *curr_pd;
 	pt_t *curr_pt;
 	int32 pt_frame_id;
+	uint32 offset;
+	uint32 vaddress;
+
 	mask = disable();
 
 	//get vpn and pid
 	curr_vpn = inverted_page_tab[frame_id].vpn;
 	curr_pid = inverted_page_tab[frame_id].pid;
-
-	/*kprintf("frame id is %d\n",frame_id);
-	kprintf("vpn is %d\n",curr_vpn);*/
 	//get vir address
-	uint32 vaddress =  VPN_TO_VD(curr_vpn);
+	vaddress =  VPN_TO_VD(curr_vpn);
 	virtual_address = (vd_t *)(&vaddress);
-	/*kprintf("vd is %u\n",virtual_address);
-	kprintf("vdpd is %u\n",virtual_address->pd_offset);
-	kprintf("vdpt is %u\n",virtual_address->pt_offset);
-	kprintf("vdpg is %u\n",virtual_address->pg_offset);*/
 	//get curr pd
 	curr_pd = proctab[curr_pid].prpdptr;
 
@@ -142,6 +170,7 @@ int32 free_frame(int32 frame_id){
 	if(curr_pid == currpid){
 		// check invlpg;
 		tmp = curr_vpn;
+		//kprintf("same process\n");
 		asm("pushl %eax");
 		asm("invlpg tmp");
 		asm("popl %eax");
@@ -162,9 +191,11 @@ int32 free_frame(int32 frame_id){
 		rm_frame_fifo(pt_frame_id);
 	}
 
-	//If the dirty bit for page vp was set in its page table,
 
-	if(curr_pt[virtual_address->pt_offset].pt_dirty == 1){
+	//If the dirty bit for page vp was set in its page table,
+	//second is only for gca
+
+	if(curr_pt[virtual_address->pt_offset].pt_dirty == 1 || frame_tab[frame_id].dirty == 1){
 		bs_map *curr_bs_map;
 
 		//Using the backing store map
@@ -176,16 +207,27 @@ int32 free_frame(int32 frame_id){
 		}
 
 		// Write the page back to the backing store. 
-		uint32 offset = curr_vpn - curr_bs_map->vpn;
-		//uint32 *write = (uint32 *)FID_TO_VD(frame_id);
-		//vaddress = *write;
-		//*write = vaddress;
-		//kprintf("write back p is %u\n",vaddress);
-		open_bs(curr_bs_map->bs_id);
-		write_bs((char*)FID_TO_VD(frame_id), curr_bs_map->bs_id, offset);
-		close_bs(curr_bs_map->bs_id);
+		offset = curr_vpn - curr_bs_map->vpn;
+		if(open_bs(curr_bs_map->bs_id)==SYSERR){
+			kill(curr_pid);
+            restore(mask);
+            return SYSERR;
+		}
 
-	}
+		//for network error
+		if(write_bs((char*)FID_TO_VD(frame_id), curr_bs_map->bs_id, offset)==SYSERR){
+			kill(curr_pid);
+            restore(mask);
+            return SYSERR;
+		}
+
+
+		if(close_bs(curr_bs_map->bs_id)==SYSERR){
+			kill(curr_pid);
+            restore(mask);
+            return SYSERR;
+        }
+    }
 	hook_pswap_out(curr_pid,curr_vpn,frame_id);
 	restore(mask);
 	return OK;
@@ -197,7 +239,7 @@ int32 get_free_frame(void){
 	intmask mask;
 	int32 frameid;
 	frame_t *frame_now;
-	int i;
+	int32 i;
 
 	mask = disable();
 
@@ -220,6 +262,8 @@ int32 get_free_frame(void){
 		restore(mask);
 		return SYSERR;
 	}
+	//kprintf("frameid return is %d\n",frameid);
+	//rm_frame_fifo(frameid);
 
 	// ensure frameid is a valid number
 	if(frameid == SYSERR){
@@ -242,38 +286,43 @@ int32 frame_allocate(void){
 
 	// frametab is shared data which can only be accessed by one process
 	mask = disable();
-
+	//kprintf("start get frame\n");
 	if((frameid=get_free_frame()) == SYSERR){
+		//kprintf("find it 1\n");
 		restore(mask);
 		return SYSERR;
 	}
+	//kprintf("end get frame\n");
 
 	// set frame
-
 	curr_frame = &frame_tab[frameid];
 	curr_frame->state = FRAME_USED;
 	curr_frame->type = -1;
+	curr_frame->dirty = 0;
 	curr_frame->next_frame = (frame_t *)NULL;
-
 	// set inverted page
 	curr_inverted_page = &inverted_page_tab[frameid];
 	curr_inverted_page->refcount = 0;
 	curr_inverted_page->pid=currpid; 
 
-
+	//kprintf("start to find frame %d pid %d\n",curr_frame->frame_id,currpid);
 	// put frame into frame linked list
-
 	if(frame_head==NULL){
 		frame_head = curr_frame;
 	}else{
 		temp_frame = frame_head;
 
 		while(temp_frame->next_frame != NULL){
+			//kprintf("add frame %d\n",temp_frame->frame_id);
 			temp_frame = temp_frame->next_frame;
 		}
 
 		temp_frame->next_frame = curr_frame;
+		//kprintf("add frame %d\n",temp_frame->frame_id);
+		//kprintf("frame %d\n",curr_frame->frame_id);
 	}
+
+	//kprintf("find it 6\n");
 	restore(mask);
 
 	return frameid;

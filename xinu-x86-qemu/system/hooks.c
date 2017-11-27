@@ -6,6 +6,8 @@
 
 #define POLICY_TESTING 0
 
+int32 last = 0;
+
 /*
  * Note that this file will be replaced in grading. So you may change them to
  * output what you are interested, but do not let your implementation depend on
@@ -95,8 +97,37 @@ void hook_pswap_out(int16 procid, uint32 pagenum, uint32 framenum) {
     kprintf("Passed\n");
   } else {
     kprintf("Testing GCA .. ");
+    int32 i = (last+1)%NFRAMES;
 
-    // If you decide to complete GCA part, you can test here.
+    uint32 vd;
+    uint32 vpn;
+    vd_t *fault_vd;
+    pd_t *curr_pd;
+    pt_t *curr_pt;
+
+    while(i != framenum){
+      vpn = inverted_page_tab[i].vpn;
+      vd = VPN_TO_VD(vpn);
+      fault_vd = (vd_t *)(&vd);
+      curr_pd = proctab[currpid].prpdptr;
+      curr_pt = (pt_t*)VPN_TO_VD(curr_pd[fault_vd->pd_offset].pd_base);
+      
+      if(curr_pt[fault_vd->pt_offset].pt_acc == 0 && curr_pt[fault_vd->pt_offset].pt_dirty != 0){
+        panic("FAIL\n");
+      }
+      i=(i+1)%NFRAMES;
+    }
+    
+    vd = VPN_TO_VD(pagenum);
+    fault_vd = (vd_t *)(&vd);
+    curr_pd = proctab[currpid].prpdptr;
+    curr_pt = (pt_t*)VPN_TO_VD(curr_pd[fault_vd->pd_offset].pd_base);
+
+    if(curr_pt[fault_vd->pt_offset].pt_acc != 0 || curr_pt[fault_vd->pt_offset].pt_dirty != 0){
+      panic("FAIL\n");
+    }
+
+    last = last_frameid;
 
     kprintf("Passed\n");
   }

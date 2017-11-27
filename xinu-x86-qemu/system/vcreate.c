@@ -36,8 +36,8 @@ pid32	vcreate(
 	if (((saddr = (uint32 *)getstk(ssize)) ==
 	    (uint32 *)SYSERR ) ||
 	    (pid=newpid()) == SYSERR || priority < 1 ) {
-		kprintf("pid %d\n",pid);
-		kprintf("ssard %d\n",*saddr);
+		//kprintf("pid %d\n",pid);
+		//kprintf("ssard %d\n",*saddr);
 		restore(mask);
 		return SYSERR;
 	}
@@ -104,7 +104,7 @@ pid32	vcreate(
 
 
 	// allocate a pd for the process
-	kprintf("start allocate pd\n");
+	//kprintf("start allocate pd\n");
 
 	if((prptr->prpdptr = pd_allocate())==NULL){
 		prcount--;
@@ -122,7 +122,7 @@ pid32	vcreate(
 	uint32 size;
 	bsd_t bsid;
 	uint32 offset = 0;
-	kprintf("start allocate bs\n");
+	//kprintf("start allocate bs\n");
 	while(remain_vsize > 0){
 		//check size to allocate
 		if(remain_vsize > MAX_PAGES_PER_BS){
@@ -156,7 +156,7 @@ pid32	vcreate(
 	}
 
 	//initial virtual memory
-	kprintf("start allocate virtual memory\n");
+	//kprintf("start allocate virtual memory\n");
 
 	// note  if this is called , will introduce a error
 	prptr->prvmem.mnext = (struct memblk*) VPN_TO_VD(VPN0);;

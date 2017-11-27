@@ -5,34 +5,36 @@
 
 //performs the following lookup
 bs_map* get_bs_map(pid32 pid, uint32 vpn){
+	intmask mask;
 	bs_map *curr_bs_map;
 	struct bs_entry *curr_bs;
 	int32 i;
+
+	mask = disable();
 
 	for(i=0; i<MAX_BS_ENTRIES; i++){
 		curr_bs = &bstab[i];
 		curr_bs_map = &bs_map_tab[i];
 		// check whether all conditions are met
-		if(curr_bs->isallocated == FALSE || curr_bs_map->allocated == FALSE || curr_bs_map->pid != pid || vpn < curr_bs_map->vpn || vpn >= (curr_bs_map->vpn+curr_bs_map->npg)){
-			/*kprintf("bs allocated %d\n",(int32)curr_bs->isallocated);
-			kprintf("bs map allocated %d\n",(int32)curr_bs_map->allocated);
-			kprintf("vpn allocated %d\n",(int32)curr_bs_map->vpn);
-			kprintf("size allocated %d\n",(int32)curr_bs_map->npg);
-			kprintf("target vpn is %d\n",vpn);*/
+		if((curr_bs->isallocated == FALSE) || (curr_bs_map->allocated == FALSE) || (curr_bs_map->pid != pid) || (vpn < curr_bs_map->vpn) || (vpn >= (curr_bs_map->vpn+curr_bs_map->npg))){
 			continue;
 		}else{
+			//kprintf("map is %d %d\n",i,currpid);
+			restore(mask);
 			return curr_bs_map;
 		}
 	}
-
+	restore(mask);
 	return (bs_map*) NULL;
 }
 
 // initial bs map tab
 
 void initial_bs_map_tab(void){
+	intmask mask;
 	int32 i;
 
+	mask = disable();
 	for(i=0; i<MAX_BS_ENTRIES; i++){
 		bs_map_tab[i].pid = -1;
 		bs_map_tab[i].vpn = 0;
@@ -40,17 +42,21 @@ void initial_bs_map_tab(void){
 		bs_map_tab[i].bs_id = -1;
 		bs_map_tab[i].allocated = FALSE;
 	}
+	restore(mask);
 	return;
 }
 
 // add a new map
 int32 add_bs_map(pid32 pid, uint32 vpn, uint32 npg, bsd_t bs_id){
+	intmask mask;
 	bs_map *curr_bs_map;
 
+	mask = disable();
 	//kprintf("start allocate bs %d\n", bs_id);
 
 
 	if(bstab[bs_id].isallocated==FALSE || bs_map_tab[bs_id].allocated == TRUE){
+		restore(mask);
 		return SYSERR;
 	}
 
@@ -63,6 +69,7 @@ int32 add_bs_map(pid32 pid, uint32 vpn, uint32 npg, bsd_t bs_id){
 	curr_bs_map->npg = npg;
 	curr_bs_map->bs_id = bs_id;
 	curr_bs_map->allocated = TRUE;
+	restore(mask);
 	return OK;
 
 }
@@ -70,14 +77,18 @@ int32 add_bs_map(pid32 pid, uint32 vpn, uint32 npg, bsd_t bs_id){
 // remove a map of a process 
 
 int32 rm_bs_map(pid32 pid){
+	intmask mask;
 	bs_map *curr_bs_map;
 	int32 i;
+
+	mask =disable();
 
 	for(i=0; i<MAX_BS_ENTRIES; i++){
 		curr_bs_map = &bs_map_tab[i];
 		if(curr_bs_map->allocated== TRUE && curr_bs_map->pid==pid){
 			//deallocate bs 
 			if(deallocate_bs(curr_bs_map->bs_id)==SYSERR){
+				restore(mask);
 				return SYSERR;
 			};
 			//reinitial bs map
@@ -88,6 +99,6 @@ int32 rm_bs_map(pid32 pid){
 			curr_bs_map->allocated = FALSE;
 		}
 	}
-
+	restore(mask);
 	return OK;
 }

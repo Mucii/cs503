@@ -34,6 +34,45 @@ static void do_policy_test(void) {
   // Write data
   for (uint32 i = 0; i<npages; i++) {
     uint32 *p = (uint32*)(mem + (i * PAGESIZE));
+    // kprintf("Write Iteration [%3d] at 0x%08x\n", i, p);
+    //access a new page
+    uint32 v = get_test_value(p);
+    *p = v;
+    //access a old one
+    int j = i % 3;
+    p = (uint32*)(mem+(j * PAGESIZE));
+    v = get_test_value(p);
+    *p = v;
+    sleepms(20); // to make it slower
+  }
+
+  if (vfreemem(mem, nbytes) == SYSERR) {
+    panic("Policy Test: vfreemem() failed.\n");
+  } else {
+#if PAGE_REPLACEMENT == 1
+    kprintf("\nPage Replacement Policy Test Finished.\n");
+#else
+    kprintf("\nPage Fault Handling Test Finished\n");
+#endif
+    kprintf("Here NFRAMES = %d\n", NFRAMES);
+  }
+}
+
+/*static void do_policy_test(void) {
+  uint32 npages = PAGE_ALLOCATION - 1;
+  uint32 nbytes = npages * PAGESIZE;
+
+  kprintf("Running Page Replacement Policy Test, with NFRAMES = %d\n", NFRAMES);
+
+  char *mem = vgetmem(nbytes);
+  if (mem == (char*) SYSERR) {
+    panic("Page Replacement Policy Test failed\n");
+    return;
+  }
+
+  // Write data
+  for (uint32 i = 0; i<npages; i++) {
+    uint32 *p = (uint32*)(mem + (i * PAGESIZE));
 
     // kprintf("Write Iteration [%3d] at 0x%08x\n", i, p);
     for (uint32 j=0; j<PAGESIZE; j=j+4) {
@@ -66,7 +105,7 @@ static void do_policy_test(void) {
 #endif
     kprintf("Here NFRAMES = %d\n", NFRAMES);
   }
-}
+}*/
 
 /**
  * Just iterate through a lot of pages, and check if the output satisfies the policy.
@@ -91,20 +130,33 @@ void page_policy_test(void) {
   }
 #endif
 
-  pid32 p = vcreate(do_policy_test, INITSTK, PAGE_ALLOCATION,
+  pid32 p1 = vcreate(do_policy_test, INITSTK, PAGE_ALLOCATION,
                     INITPRIO, "page rep", 0, NULL);
-  resume(p);
+  pid32 p2 = vcreate(do_policy_test, INITSTK, PAGE_ALLOCATION,
+                    INITPRIO, "page rep", 0, NULL);
+  //pid32 p3 = vcreate(do_policy_test, INITSTK, PAGE_ALLOCATION,
+                    //INITPRIO, "page rep", 0, NULL);
+  //pid32 p4 = vcreate(do_policy_test, INITSTK, PAGE_ALLOCATION,
+                    //INITPRIO, "page rep", 0, NULL);
+
+  resched_cntl(DEFER_START);
+  resume(p1);
+  resume(p2);
+  //resume(p3);
+  //resume(p4);
+  resched_cntl(DEFER_STOP);
 
   while (1) {
-    if(proctab[p].prstate == PR_FREE) {
+    if((proctab[p1].prstate == PR_FREE) && (proctab[p2].prstate == PR_FREE)){
       break;
     }
     else {
+      //kprintf("1\n");
       sleepms(100);
     }
   }
-
-  kprintf("\n\nTest Passed.\n\n");
+  uint32 faults = get_faults();
+  kprintf("\n\nTest Passed with faults conut %u.\n\n",faults);
 
   return;
 }

@@ -40,8 +40,7 @@ char  	*vgetmem(
 			return (char *)(curr);
 
 		} else if (curr->mlength > nbytes) { /* Split big block	*/
-			leftover = (struct memblk *)((uint32) curr +
-					nbytes);
+			leftover = (struct memblk *)((uint32) curr + nbytes);
 			prev->mnext = leftover;
 			leftover->mnext = curr->mnext;
 			leftover->mlength = curr->mlength - nbytes;

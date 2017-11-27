@@ -19,7 +19,7 @@ syscall srpolicy(int policy)
 	case GCA:
 		/* LAB3TODO - Bonus Problem */
     currpolicy = GCA;
-    return SYSERR;
+    return OK;
 
 	default:
 		return SYSERR;
