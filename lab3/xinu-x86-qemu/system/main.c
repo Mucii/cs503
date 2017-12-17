@@ -4,7 +4,7 @@ extern void page_policy_test(void);
 
 process	main(void)
 {
-  srpolicy(FIFO);
+  srpolicy(GCA);
 
   /* Start the network */
   /* DO NOT REMOVE OR COMMENT BELOW */

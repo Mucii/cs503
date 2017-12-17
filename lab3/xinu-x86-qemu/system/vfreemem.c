@@ -68,6 +68,6 @@ syscall	vfreemem(
 		block->mnext = next->mnext;
 	}
 
-
+	restore(mask);
 	return OK;
 }

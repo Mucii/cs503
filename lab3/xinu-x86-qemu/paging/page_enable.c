@@ -100,17 +100,23 @@ unsigned long read_cr3(void) {
 
 //enable paging by set cr0 | 0x80000000
 void enable_paging(){
+  intmask mask;
+  mask =disable();
   unsigned long temp = read_cr0();
   temp = temp | (0x80000000);
   set_cr0(temp);
+  restore(mask);
   return;
 }
 
 // set cr3 the base register of page directory
 void set_pd_reg(unsigned long pd_reg){
 // use last 20 digits as base
+  intmask mask;
+  mask =disable();
 	pd_reg = pd_reg << 12;
 	set_cr3(pd_reg);
+  restore(mask);
   return;
 }
 

@@ -43,6 +43,7 @@ typedef struct  _frame{
 	int32 frame_id;
 	int32 state;  // this frame is used or free
 	int32 type;   // this frame is used for pd, pt or page
+	int32 dirty;  // whether this frame is dirty
 	struct _frame *next_frame; // pointer to the next frame;
 } frame_t;
 
@@ -101,7 +102,7 @@ extern uint32 count_faults;
 #define VPN0        4096    /* first start vpn*/
 
 #ifndef NFRAMES
-#define NFRAMES		500	/* number of frames		*/
+#define NFRAMES		40	/* number of frames		*/
 #endif
 
 #define MAP_SHARED 1
@@ -133,6 +134,14 @@ extern uint32 count_faults;
 #define VD_TO_VPN(vd)  (uint32)((uint32)vd / NBPG)
 #define VD_TO_FID(vd)  (uint32)((uint32)vd / NBPG-FRAME0)
 #define FID_TO_VPN(fid) (uint32)((uint32)fid+FRAME0)
+
+
+extern int32 last_frameid; // this is for golobal gca 
+extern int32 last;   // this is for gca test
+
+extern sid32 gca_sem;
+extern sid32 fifo_sem;
+
 
 
 // in /paging/page_enable.c

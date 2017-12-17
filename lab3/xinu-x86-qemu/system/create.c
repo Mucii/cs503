@@ -62,9 +62,7 @@ pid32	create(
 
 	// create a pd to avoid fault
 
-	if((prptr->prpdptr = pd_allocate()) == NULL){
-		return SYSERR;
-	}
+	prptr->prpdptr = proctab[NULLPROC].prpdptr;
 
 	/* Initialize stack as if the process was called		*/
 

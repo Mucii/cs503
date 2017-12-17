@@ -10,7 +10,7 @@
 /* Set to 1 to test page replacement
  * Set to 0 to check page fault handling is correct
  */
-#define PAGE_REPLACEMENT 0
+#define PAGE_REPLACEMENT 1
 
 // Return a deterministic value per addr for testing.
 uint32 get_test_value(uint32 *addr) {
@@ -34,12 +34,10 @@ static void do_policy_test(void) {
   // Write data
   for (uint32 i = 0; i<npages; i++) {
     uint32 *p = (uint32*)(mem + (i * PAGESIZE));
-    //uint32 *p1 = (uint32*)(mem + (i * PAGESIZE));
 
-    kprintf("Write Iteration [%3d] at 0x%08x\n", i, p);
+    // kprintf("Write Iteration [%3d] at 0x%08x\n", i, p);
     for (uint32 j=0; j<PAGESIZE; j=j+4) {
       uint32 v = get_test_value(p);
-      //*p1++ = v;
       *p++ = v;
     }
 
@@ -51,7 +49,6 @@ static void do_policy_test(void) {
     uint32 *p = (uint32*)(mem + (i * PAGESIZE));
     kprintf("Check Iteration [%3d] at 0x%08x\n", i, p);
     for (uint32 j=0; j<PAGESIZE; j=j+4) {
-      //uint32 v = *p;//get_test_value(p);
       uint32 v = get_test_value(p);
       ASSERT(*p++ == v);
     }
@@ -70,6 +67,47 @@ static void do_policy_test(void) {
     kprintf("Here NFRAMES = %d\n", NFRAMES);
   }
 }
+// this is for my own fifo and gca test
+
+/*static void do_policy_test(void) {
+  uint32 npages = PAGE_ALLOCATION - 1;
+  uint32 nbytes = npages * PAGESIZE;
+
+  kprintf("Running Page Replacement Policy Test, with NFRAMES = %d\n", NFRAMES);
+
+  char *mem = vgetmem(nbytes);
+  if (mem == (char*) SYSERR) {
+    panic("Page Replacement Policy Test failed\n");
+    return;
+  }
+
+  // Write data
+  for (uint32 i = 0; i<npages; i++) {
+    uint32 *p = (uint32*)(mem + (i * PAGESIZE));
+    // kprintf("Write Iteration [%3d] at 0x%08x\n", i, p);
+    //access a new page
+    uint32 v = get_test_value(p);
+    *p = v;
+    //access a old one
+    int j = i % 1;
+    p = (uint32*)(mem+(j * PAGESIZE));
+    v = get_test_value(p);
+    *p = v;
+    sleepms(20); // to make it slower
+  }
+
+  if (vfreemem(mem, nbytes) == SYSERR) {
+    panic("Policy Test: vfreemem() failed.\n");
+  } else {
+#if PAGE_REPLACEMENT == 1
+    kprintf("\nPage Replacement Policy Test Finished.\n");
+#else
+    kprintf("\nPage Fault Handling Test Finished\n");
+#endif
+    kprintf("Here NFRAMES = %d\n", NFRAMES);
+  }
+}*/
+
 
 /**
  * Just iterate through a lot of pages, and check if the output satisfies the policy.
@@ -96,7 +134,10 @@ void page_policy_test(void) {
 
   pid32 p = vcreate(do_policy_test, INITSTK, PAGE_ALLOCATION,
                     INITPRIO, "page rep", 0, NULL);
+  pid32 p1 = vcreate(do_policy_test, INITSTK, PAGE_ALLOCATION,
+                    INITPRIO, "page rep1", 0, NULL);
   resume(p);
+  resume(p1);
 
   while (1) {
     if(proctab[p].prstate == PR_FREE) {

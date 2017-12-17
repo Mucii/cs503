@@ -20,7 +20,7 @@ char  	*vgetmem(
 
     if(prptr->vcreate == 1){
     	struct memblk *vheap = (struct memblk*) VPN_TO_VD(VPN0);
-    	vheap->mlength = prptr->vsize * NBPG;
+    	vheap->mlength = (prptr->vsize * NBPG);
     	vheap->mnext = NULL;
     	prptr->vcreate = 0;
     }
@@ -40,8 +40,7 @@ char  	*vgetmem(
 			return (char *)(curr);
 
 		} else if (curr->mlength > nbytes) { /* Split big block	*/
-			leftover = (struct memblk *)((uint32) curr +
-					nbytes);
+			leftover = (struct memblk *)((uint32) curr + nbytes);
 			prev->mnext = leftover;
 			leftover->mnext = curr->mnext;
 			leftover->mlength = curr->mlength - nbytes;

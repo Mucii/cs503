@@ -32,6 +32,10 @@ bs_map bs_map_tab[MAX_ID-MIN_ID+1];		// bs map head
 
 uint32 count_faults = 0;
 
+int32 last_frameid = -1; // initial value fo gca statring point
+
+sid32 gca_sem;
+sid32 fifo_sem;
 
 /* Lab3. frames metadata handling */
 frame_md_t frame_md;
@@ -226,37 +230,42 @@ static void initialize_paging()
 	//initial frame
 	frame_initial();
 
-	kprintf("frame initialize\n\n");
+	//kprintf("frame initialize\n\n");
 
 	//initial bs map
 	initial_bs_map_tab();
 
-	kprintf("bs map initialize\n\n");
+	//kprintf("bs map initialize\n\n");
 
 	//initial global page table
 	init_global_pt();
 
-	kprintf("global pt initialize\n\n");
+	//kprintf("global pt initialize\n\n");
 
 	set_evec(14, (uint32)pgfault);
 
-	kprintf("handller initialize\n\n");
+	//kprintf("handller initialize\n\n");
 
 	// allocate pd for null process
 	if ((proctab[NULLPROC].prpdptr = pd_allocate()) == NULL)
         return;
 
-    kprintf("null process pd initialize\n\n");
+    //kprintf("null process pd initialize\n\n");
 
     //set register
 
     set_pd_reg(VD_TO_VPN(proctab[NULLPROC].prpdptr));
+    
 
-    kprintf("register initialize\n\n");
+    //create process sem
+    gca_sem = semcreate(1);
+    fifo_sem = semcreate(1);
+
+    //kprintf("register initialize\n\n");
 
     enable_paging();
 
-    kprintf("paging initialize\n\n");
+    //kprintf("paging initialize\n\n");
 
 	return;
 }

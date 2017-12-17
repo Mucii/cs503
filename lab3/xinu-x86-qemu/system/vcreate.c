@@ -14,7 +14,7 @@ local	int newpid();
 pid32	vcreate(
 	  void		*funcaddr,	/* Address of the function	*/
 	  uint32	ssize,		/* Stack size in words		*/
-		uint32	hsize,		/* Heap size in num of pages */
+	  uint32	hsize,		/* Heap size in num of pages */
 	  pri16		priority,	/* Process priority > 0		*/
 	  char		*name,		/* Name (for debugging)		*/
 	  uint32	nargs,		/* Number of args that follow	*/
@@ -36,8 +36,8 @@ pid32	vcreate(
 	if (((saddr = (uint32 *)getstk(ssize)) ==
 	    (uint32 *)SYSERR ) ||
 	    (pid=newpid()) == SYSERR || priority < 1 ) {
-		kprintf("pid %d\n",pid);
-		kprintf("ssard %d\n",*saddr);
+		//kprintf("pid %d\n",pid);
+		//kprintf("ssard %d\n",*saddr);
 		restore(mask);
 		return SYSERR;
 	}
