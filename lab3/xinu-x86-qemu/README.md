@@ -58,16 +58,16 @@ We check dirty and refered digits in corresping page table for each page to dete
 
 vcreate() to create a process with virtual heap. vgetmem() and vfreemem() to alocate and dealocate memory for a process with virtual heap.
 
-The construction of Paging is mainly in /paging
+The construction of Paging is mainly in /paging.
 
-pgfault.s IRS for paging, note there is not cli/sti to make writting consistent with reading
+pgfault.s IRS for paging, note there is not cli/sti to make writting consistent with reading.
 
 page_fault_handler.c page fault handler for paging, I use semaphore for the handler to make sure only one can access the global data.
 
 frame.c frame mechanics for paging, including FIFO and GCA algorithm for frame evicting.
 
-page.c page mechanics and paging initialization 
+page.c page mechanics and paging initialization.
 
-bs_map.c backstore mapping 
+bs_map.c backstore mapping.
 
-see all global definition in /include/paging.h
+see all global definition in /include/paging.h.
