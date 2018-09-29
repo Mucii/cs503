@@ -51,7 +51,7 @@ We use a remote disk (backstore) to store all pages at the beginning and only pu
 
 We use a linked list to keep all pages put in memory for FIFO. When need to replace, we always remove the first page on the linked list. When need to remove, we always add the page to the last of the linked list.
 
-We check dirty and refered digits in corresping page table for each page to determine pages replacement for GCA
+We check dirty and refered digits in corresping page table for each page to determine pages replacement for GCA.
 
 
 ## API 
